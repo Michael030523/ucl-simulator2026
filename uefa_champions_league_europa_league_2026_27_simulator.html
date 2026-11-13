@@ -1,0 +1,3113 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>UEFA Champions League 2026/27 Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at 50% 0%, #0f1f4b 0%, #060b19 55%, #03060c 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+            transition: background 0.4s ease;
+        }
+        body.theme-uel {
+            background: radial-gradient(circle at 50% 0%, #431805 0%, #160903 55%, #080402 100%);
+        }
+        .ucl-card {
+            background: rgba(12, 22, 48, 0.82);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(56, 189, 248, 0.16);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+        body.theme-uel .ucl-card {
+            background: rgba(34, 16, 8, 0.85);
+            border: 1px solid rgba(251, 146, 60, 0.22);
+        }
+        .ucl-header-gradient {
+            background: linear-gradient(135deg, rgba(14, 30, 75, 0.95) 0%, rgba(7, 16, 40, 0.95) 50%, rgba(19, 39, 95, 0.95) 100%);
+        }
+        body.theme-uel .ucl-header-gradient {
+            background: linear-gradient(135deg, rgba(67, 24, 6, 0.96) 0%, rgba(28, 11, 4, 0.96) 50%, rgba(82, 30, 7, 0.96) 100%);
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #060b19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e3a8a;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #2563eb;
+        }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45); }
+            50% { box-shadow: 0 0 16px 4px rgba(16, 185, 129, 0.25); }
+        }
+        .live-badge {
+            animation: pulseGlow 1.6s infinite;
+        }
+        @keyframes emblemPop {
+            0% { transform: scale(0.35) rotate(-25deg); opacity: 0; filter: blur(8px); }
+            55% { transform: scale(1.08) rotate(4deg); opacity: 1; filter: blur(0px); }
+            75% { transform: scale(0.97) rotate(-1deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes slowOrbit {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes shockwaveExpand {
+            0% { transform: scale(0.5); opacity: 0.85; }
+            100% { transform: scale(2.35); opacity: 0; }
+        }
+        @keyframes textSlideUp {
+            0% { transform: translateY(22px); opacity: 0; letter-spacing: 0.05em; }
+            100% { transform: translateY(0); opacity: 1; letter-spacing: 0.16em; }
+        }
+        .anim-emblem {
+            animation: emblemPop 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .anim-orbit {
+            animation: slowOrbit 14s linear infinite;
+        }
+        .anim-ring-1 {
+            animation: shockwaveExpand 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .anim-ring-2 {
+            animation: shockwaveExpand 1.35s cubic-bezier(0.16, 1, 0.3, 1) 0.18s forwards;
+        }
+        .anim-text-up {
+            animation: textSlideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-cyan-500 selection:text-slate-950">
+
+    <!-- ===================================================== -->
+    <!-- BROADCAST INTRO ANIMATION OVERLAY (UCL / UEL LOGO)    -->
+    <!-- ===================================================== -->
+    <div id="competitionIntroOverlay" onclick="skipCompetitionIntro()" class="fixed inset-0 z-[60] hidden items-center justify-center overflow-hidden cursor-pointer select-none transition-opacity duration-300 opacity-0">
+        <!-- Dynamic Background Glow -->
+        <div id="introBgBackdrop" class="absolute inset-0 bg-slate-950/95 backdrop-blur-xl"></div>
+        <div id="introRadialGlow" class="absolute w-[520px] h-[520px] rounded-full blur-3xl opacity-45 pointer-events-none"></div>
+
+        <!-- Animated Centerpiece -->
+        <div class="relative z-10 flex flex-col items-center text-center px-6">
+            <div class="relative flex items-center justify-center w-44 h-44 sm:w-52 sm:h-52">
+                <!-- Expanding Shockwave Rings -->
+                <div id="introRing1" class="absolute inset-0 rounded-full border-2 pointer-events-none"></div>
+                <div id="introRing2" class="absolute inset-3 rounded-full border pointer-events-none"></div>
+                <!-- Rotating Dashed Orbit Ring -->
+                <div id="introOrbitRing" class="absolute -inset-3 rounded-full border border-dashed opacity-50 anim-orbit pointer-events-none"></div>
+                <!-- Main Competition Logo Container -->
+                <div id="introLogoContainer" class="relative w-36 h-36 sm:w-44 sm:h-44 rounded-3xl flex items-center justify-center shadow-2xl anim-emblem"></div>
+            </div>
+
+            <!-- Broadcast Title & Subtitle -->
+            <div id="introSubBadge" class="mt-6 text-[11px] sm:text-xs font-black uppercase px-3.5 py-1 rounded-full border anim-text-up"></div>
+            <h2 id="introMainTitle" class="mt-2.5 text-2xl sm:text-5xl font-black tracking-tight text-white drop-shadow-lg"></h2>
+            <p id="introVenueText" class="mt-2 text-xs sm:text-sm font-semibold text-slate-300"></p>
+        </div>
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- STARTUP COMPETITION SELECTOR OVERLAY (UCL vs. UEL)    -->
+    <!-- ===================================================== -->
+    <div id="competitionSelectModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="max-w-3xl w-full rounded-3xl bg-slate-900/95 border border-slate-700/80 p-6 sm:p-8 shadow-2xl">
+            <div class="text-center mb-6">
+                <span class="text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-white/10 text-slate-200 border border-white/15">Saison 2026/27 • Offizieller Ligaphasen-Modus</span>
+                <h2 class="text-2xl sm:text-4xl font-black text-white mt-3">Welchen Wettbewerb möchtest du simulieren?</h2>
+                <p class="text-xs sm:text-sm text-slate-400 mt-1.5">Wähle deinen Wettbewerb zum Start. Du kannst später jederzeit oben im Menü zwischen beiden Turnieren wechseln.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                <!-- UEFA Champions League Card -->
+                <button onclick="selectCompetition('ucl', true)" class="group text-left p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-blue-950/90 via-slate-900 to-indigo-950/90 border-2 border-cyan-500/40 hover:border-cyan-400 shadow-xl hover:shadow-cyan-500/20 transition-all duration-200 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-600 to-indigo-900 p-2 flex items-center justify-center text-white shadow-lg shadow-cyan-500/30 border border-cyan-300/50 group-hover:scale-110 transition-transform duration-300">
+                                <svg class="w-10 h-10" viewBox="0 0 100 100" fill="none">
+                                    <circle cx="50" cy="50" r="44" stroke="currentColor" stroke-width="2.5" stroke-opacity="0.45"/>
+                                    <path fill="currentColor" d="M50 7L53.5 17.5L64.5 17.5L55.5 24L59 34.5L50 28L41 34.5L44.5 24L35.5 17.5L46.5 17.5Z"/>
+                                    <path fill="currentColor" d="M50 65L53.5 75.5L64.5 75.5L55.5 82L59 92.5L50 86L41 92.5L44.5 82L35.5 75.5L46.5 75.5Z"/>
+                                    <path fill="currentColor" d="M20 34L23.5 44.5L34.5 44.5L25.5 51L29 61.5L20 55L11 61.5L14.5 51L5.5 44.5L16.5 44.5Z"/>
+                                    <path fill="currentColor" d="M80 34L83.5 44.5L94.5 44.5L85.5 51L89 61.5L80 55L71 61.5L74.5 51L65.5 44.5L76.5 44.5Z"/>
+                                    <path fill="currentColor" fill-opacity="0.85" d="M50 36L53 45L62 45L54.5 50.5L57.5 59.5L50 54L42.5 59.5L45.5 50.5L38 45L47 45Z"/>
+                                </svg>
+                            </div>
+                            <span class="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">36 Teams • 144 Spiele</span>
+                        </div>
+                        <h3 class="text-xl sm:text-2xl font-black text-white group-hover:text-cyan-300 transition">UEFA Champions League</h3>
+                        <p class="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                            Mit FC Bayern, Borussia Dortmund, VfB Stuttgart, RB Leipzig, LASK Linz, Real Madrid, Man City, PSG, Barcelona, Liverpool & Co.
+                        </p>
+                    </div>
+                    <div class="mt-5 pt-3 border-t border-blue-500/20 flex items-center justify-between text-xs font-bold text-cyan-300">
+                        <span>🏟️ Finale: Metropolitano, Madrid</span>
+                        <span class="px-3 py-1.5 rounded-xl bg-cyan-500 text-slate-950 group-hover:bg-cyan-400 transition">CL starten →</span>
+                    </div>
+                </button>
+
+                <!-- UEFA Europa League Card -->
+                <button onclick="selectCompetition('uel', true)" class="group text-left p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-orange-950/90 via-slate-900 to-amber-950/90 border-2 border-orange-500/40 hover:border-orange-400 shadow-xl hover:shadow-orange-500/20 transition-all duration-200 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-600 to-stone-900 p-2 flex items-center justify-center text-white shadow-lg shadow-orange-500/30 border border-amber-300/50 group-hover:scale-110 transition-transform duration-300">
+                                <svg class="w-10 h-10" viewBox="0 0 100 100" fill="none">
+                                    <polygon points="50,5 88,24 94,65 68,93 32,93 6,65 12,24" stroke="currentColor" stroke-width="4" fill="currentColor" fill-opacity="0.12"/>
+                                    <path d="M31 28H69L62 56C60 65 55 70 50 72C45 70 40 65 38 56L31 28Z" fill="currentColor"/>
+                                    <path d="M44 72H56V81H44V72Z" fill="currentColor"/>
+                                    <path d="M35 81H65V87H35V81Z" fill="currentColor"/>
+                                    <path d="M22 46L36 60L50 48L64 60L78 46" stroke="#0f172a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <span class="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-orange-500/20 text-orange-300 border border-orange-400/30">36 Teams • 144 Spiele</span>
+                        </div>
+                        <h3 class="text-xl sm:text-2xl font-black text-white group-hover:text-orange-300 transition">UEFA Europa League</h3>
+                        <p class="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                            Mit Bayer Leverkusen, TSG Hoffenheim, RB Salzburg, Sturm Graz, AC Mailand, Juventus, Benfica, Marseille, Lyon, Celtic & Co.
+                        </p>
+                    </div>
+                    <div class="mt-5 pt-3 border-t border-orange-500/20 flex items-center justify-between text-xs font-bold text-orange-300">
+                        <span>🏟️ Finale: Stadion Frankfurt</span>
+                        <span class="px-3 py-1.5 rounded-xl bg-orange-500 text-slate-950 group-hover:bg-orange-400 transition">EL starten →</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Header Bar -->
+    <header class="ucl-header-gradient border-b border-blue-500/25 sticky top-0 z-40 shadow-2xl">
+        <div class="max-w-[1440px] mx-auto px-4 sm:px-6 py-3.5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+            <!-- Brand & Title -->
+            <div class="flex items-center gap-3.5">
+                <div id="brandLogoBox" class="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900 p-0.5 shadow-lg shadow-blue-500/20 flex items-center justify-center shrink-0 border border-cyan-400/40">
+                    <!-- Starball SVG -->
+                    <svg id="brandLogoIcon" class="w-7 h-7 text-cyan-300" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2L14.4 7.2L20 7.8L15.8 11.6L17 17.2L12 14.3L7 17.2L8.2 11.6L4 7.8L9.6 7.2L12 2Z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span id="seasonBadge" class="text-[11px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">Saison 2026/27</span>
+                        <span id="statusBadge" class="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">Echter Spielplan</span>
+                        <!-- Quick Competition Switcher Pills -->
+                        <div class="inline-flex items-center rounded-xl bg-slate-950/80 p-0.5 border border-slate-700/80">
+                            <button id="switchBtnUcl" onclick="selectCompetition('ucl', false)" class="px-2.5 py-0.5 rounded-lg text-[11px] font-black transition bg-cyan-500 text-slate-950">★ CL</button>
+                            <button id="switchBtnUel" onclick="selectCompetition('uel', false)" class="px-2.5 py-0.5 rounded-lg text-[11px] font-bold transition text-slate-300 hover:text-white">🏆 EL</button>
+                        </div>
+                        <button onclick="openCompetitionModal()" class="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 transition">Wettbewerb-Auswahl</button>
+                    </div>
+                    <h1 id="mainHeaderTitle" class="text-xl sm:text-2xl font-black tracking-tight text-white">UEFA Champions League Simulator</h1>
+                </div>
+            </div>
+
+            <!-- Global Action Controls -->
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="resetToRealStandings()" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-600/60 transition flex items-center gap-1.5" title="Setzt Spieltag 1–4 auf die echten Ergebnisse zurück und löscht Spieltag 5–8">
+                    <span>📅</span> Realer Stand (ST 1–4)
+                </button>
+                <button onclick="resetAllMatches()" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800/90 hover:bg-rose-950/80 hover:border-rose-500/40 text-slate-200 border border-slate-600/60 transition flex items-center gap-1.5" title="Setzt alle 8 Spieltage auf 0:0 / ungespielt zurück">
+                    <span>🔄</span> Komplett-Reset (ST 1)
+                </button>
+                <button id="btnSimRemaining" onclick="simulateAllRemainingLeague()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 shadow-lg shadow-cyan-500/20 transition flex items-center gap-1.5">
+                    <span>⚡</span> Restliche Ligaphase simulieren
+                </button>
+            </div>
+        </div>
+
+        <!-- Mode Navigation Tabs -->
+        <div class="max-w-[1440px] mx-auto px-4 sm:px-6 flex items-center gap-2 border-t border-blue-500/20 pt-2 pb-1 overflow-x-auto">
+            <button id="tab-league" onclick="switchMainView('league')" class="px-4 py-2 text-xs sm:text-sm font-bold rounded-t-lg border-b-2 border-cyan-400 text-cyan-300 bg-blue-950/60 whitespace-nowrap transition flex items-center gap-1.5">
+                <span>📊</span> Ligaphase & Spieltage (36 Teams)
+            </button>
+            <button id="tab-knockout" onclick="switchMainView('knockout')" class="px-4 py-2 text-xs sm:text-sm font-bold rounded-t-lg border-b-2 border-transparent text-slate-300 hover:text-white whitespace-nowrap transition flex items-center gap-1.5">
+                <span>🏆</span> K.O.-Phase (Play-offs bis Finale)
+            </button>
+            <button id="tab-stats" onclick="switchMainView('stats')" class="px-4 py-2 text-xs sm:text-sm font-bold rounded-t-lg border-b-2 border-transparent text-slate-300 hover:text-white whitespace-nowrap transition flex items-center gap-1.5">
+                <span>🌍</span> Globale Sieger-Statistik
+                <span id="navTotalSimsBadge" class="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">0 Sims</span>
+            </button>
+            <button id="tab-teams" onclick="switchMainView('teams')" class="px-4 py-2 text-xs sm:text-sm font-bold rounded-t-lg border-b-2 border-transparent text-slate-300 hover:text-white whitespace-nowrap transition flex items-center gap-1.5">
+                <span>⚙️</span> Team-Stärken & xG-Engine
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-[1440px] mx-auto px-4 sm:px-6 py-6">
+
+        <!-- ========================================== -->
+        <!-- VIEW 1: LEAGUE PHASE (MATCHDAYS & TABLE)   -->
+        <!-- ========================================== -->
+        <section id="view-league" class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+
+            <!-- LEFT COLUMN: Matchday Simulator (5 cols on XL) -->
+            <div class="xl:col-span-5 flex flex-col gap-4">
+                <div class="ucl-card rounded-2xl p-4 sm:p-5 shadow-xl">
+                    <!-- Matchday Selector Pills -->
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <h2 class="text-base sm:text-lg font-extrabold text-white flex items-center gap-2">
+                                <span id="currentMdTitle">Spieltag 4</span>
+                                <span id="currentMdDate" class="text-xs font-medium text-cyan-300/90 bg-cyan-950/70 px-2 py-0.5 rounded-md border border-cyan-500/30">3./4. Nov. 2026</span>
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-0.5">Klicke auf einen Spieltag oder tippe eigene Ergebnisse ein</p>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="changeMatchday(-1)" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center font-bold border border-slate-700">‹</button>
+                            <button onclick="changeMatchday(1)" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center font-bold border border-slate-700">›</button>
+                        </div>
+                    </div>
+
+                    <!-- Matchday 1-8 Buttons -->
+                    <div id="mdTabsContainer" class="grid grid-cols-8 gap-1.5 mb-4"></div>
+
+                    <!-- RANDOMIZER / CHAOS FACTOR CONTROL -->
+                    <div class="mb-4 p-3 rounded-xl bg-slate-900/90 border border-purple-500/30">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-sm">🎰</span>
+                                <span class="text-xs font-extrabold uppercase tracking-wider text-purple-300">Randomizer / Chaos-Faktor</span>
+                            </div>
+                            <span id="chaosBadge" class="text-xs font-black px-2 py-0.5 rounded bg-purple-500/20 text-purple-200 border border-purple-400/40">35% • Realistisch</span>
+                        </div>
+                        <input id="chaosSlider" type="range" min="0" max="100" value="35"
+                            oninput="updateChaosLevel(this.value)"
+                            class="w-full accent-purple-400 cursor-pointer h-2 rounded-lg bg-slate-800" />
+                        <div class="flex items-center justify-between gap-1 mt-2">
+                            <button onclick="updateChaosLevel(0)" class="flex-1 py-1 px-1.5 rounded-lg text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">0% Favoriten-Streng</button>
+                            <button onclick="updateChaosLevel(35)" class="flex-1 py-1 px-1.5 rounded-lg text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 transition">35% Normal</button>
+                            <button onclick="updateChaosLevel(65)" class="flex-1 py-1 px-1.5 rounded-lg text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 transition">65% Verrückt</button>
+                            <button onclick="updateChaosLevel(100)" class="flex-1 py-1 px-1.5 rounded-lg text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-rose-300 border border-rose-500/30 transition">100% Totales Chaos</button>
+                        </div>
+                    </div>
+
+                    <!-- Simulation Action Bar for Current Matchday -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4 p-2.5 rounded-xl bg-slate-900/90 border border-blue-500/20">
+                        <button onclick="simulateCurrentMatchday(false)" class="px-3 py-2 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow transition flex items-center justify-center gap-1.5">
+                            <span>🎲</span> Spieltag simulieren
+                        </button>
+                        <button id="btnLiveSim" onclick="startLiveTickerMatchday()" class="px-3 py-2 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow transition flex items-center justify-center gap-1.5">
+                            <span>⏱️</span> Live-Konferenz (90')
+                        </button>
+                        <button onclick="clearCurrentMatchday()" class="col-span-2 sm:col-span-1 px-3 py-2 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center justify-center gap-1.5">
+                            <span>🗑️</span> ST leeren
+                        </button>
+                    </div>
+
+                    <!-- Live Conference Banner (Hidden by default) -->
+                    <div id="liveConferenceBanner" class="hidden mb-4 p-3 rounded-xl bg-emerald-950/80 border border-emerald-400/50 text-emerald-100">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 live-badge"></span>
+                                <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-300">LIVE-KONFERENZ LÄUFT</span>
+                            </div>
+                            <span id="liveMinuteDisplay" class="text-sm font-black px-2 py-0.5 rounded bg-emerald-500 text-slate-950">1'</span>
+                        </div>
+                        <div class="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+                            <div id="liveProgressBar" class="bg-emerald-400 h-1.5 transition-all duration-100" style="width: 1%"></div>
+                        </div>
+                        <p id="liveGoalTicker" class="text-xs text-emerald-200 mt-2 font-medium truncate">Anpfiff in allen Stadien...</p>
+                    </div>
+
+                    <!-- Matches List (18 games per matchday) -->
+                    <div id="matchesList" class="space-y-2 max-h-[680px] overflow-y-auto pr-1"></div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Official 36-Team League Table (7 cols on XL) -->
+            <div class="xl:col-span-7 flex flex-col gap-4">
+                <div class="ucl-card rounded-2xl p-4 sm:p-5 shadow-xl">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                        <div>
+                            <h2 class="text-base sm:text-lg font-extrabold text-white flex items-center gap-2">
+                                <span>Offizielle Ligaphasen-Tabelle</span>
+                                <span id="tablePlayedBadge" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-500/20 text-cyan-300 border border-cyan-500/30">54 / 144 Spiele</span>
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-0.5">Sortiert nach offiziellen UEFA-Regeln (Pkt → TD → Tore → Auswärtstore → Siege → Auswärtssiege → Gegner-Pkt)</p>
+                        </div>
+
+                        <!-- Quick Filter -->
+                        <div class="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-700/70 self-start">
+                            <button onclick="setTableFilter('all')" id="filter-all" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white">Alle (36)</button>
+                            <button onclick="setTableFilter('top8')" id="filter-top8" class="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-300 hover:text-white">Top 8</button>
+                            <button onclick="setTableFilter('playoffs')" id="filter-playoffs" class="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-300 hover:text-white">Play-offs (9–24)</button>
+                            <button onclick="setTableFilter('out')" id="filter-out" class="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-300 hover:text-white">Aus (25–36)</button>
+                        </div>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="flex flex-wrap items-center gap-4 text-xs mb-3 px-2 py-2 rounded-xl bg-slate-900/70 border border-slate-800">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-sm bg-emerald-500 inline-block"></span>
+                            <span class="text-slate-300 font-medium">Platz 1–8: Direkt im Achtelfinale</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-sm bg-amber-400 inline-block"></span>
+                            <span class="text-slate-300 font-medium">Platz 9–16: Play-offs (Gesetzt)</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-sm bg-orange-500 inline-block"></span>
+                            <span class="text-slate-300 font-medium">Platz 17–24: Play-offs (Ungesetzt)</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-sm bg-rose-500/80 inline-block"></span>
+                            <span class="text-slate-400">Platz 25–36: Ausgeschieden</span>
+                        </div>
+                    </div>
+
+                    <!-- Standings Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-700/80 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                                    <th class="py-2.5 pl-2 pr-1 w-9">#</th>
+                                    <th class="py-2.5 px-2">Verein</th>
+                                    <th class="py-2.5 px-1.5 text-center" title="Spiele">Sp</th>
+                                    <th class="py-2.5 px-1.5 text-center hidden sm:table-cell" title="Siege">S</th>
+                                    <th class="py-2.5 px-1.5 text-center hidden sm:table-cell" title="Unentschieden">U</th>
+                                    <th class="py-2.5 px-1.5 text-center hidden sm:table-cell" title="Niederlagen">N</th>
+                                    <th class="py-2.5 px-1.5 text-center" title="Tore : Gegentore">Tore</th>
+                                    <th class="py-2.5 px-1.5 text-center hidden md:table-cell" title="Auswärtstore (UEFA Tie-Breaker #3)">AT</th>
+                                    <th class="py-2.5 px-1.5 text-center" title="Tordifferenz">TD</th>
+                                    <th class="py-2.5 px-2 text-center text-cyan-300" title="Punkte">Pkt</th>
+                                    <th class="py-2.5 px-1.5 text-center hidden lg:table-cell" title="Buchmacher-Quote & Wahrscheinlichkeit auf den Titel">Titel-Odds</th>
+                                    <th class="py-2.5 px-1.5 text-center hidden sm:table-cell text-emerald-300" title="Wie oft dieses Team in allen bisherigen Simulationen den Titel gewonnen hat">🌍 Siege %</th>
+                                    <th class="py-2.5 px-1.5 text-center hidden xl:table-cell" title="Punkte der Gegner (UEFA Tie-Breaker #6)">Geg-P</th>
+                                    <th class="py-2.5 pl-2 pr-2 text-right hidden md:table-cell">Form (Letzte 5)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="standingsBody" class="divide-y divide-slate-800/70 text-xs sm:text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 2: KNOCKOUT STAGE SIMULATOR           -->
+        <!-- ========================================== -->
+        <section id="view-knockout" class="hidden space-y-6">
+            <div class="ucl-card rounded-2xl p-5 shadow-xl">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <span id="koCompLabel" class="text-xs font-bold uppercase tracking-widest text-cyan-400">UEFA Champions League 2026/27</span>
+                        <h2 class="text-xl sm:text-2xl font-black text-white mt-0.5">K.O.-Phasen-Baum (Play-offs bis Finale)</h2>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-1">Basierend auf deiner aktuellen Ligaphasen-Tabelle. Du kannst jede Runde einzeln oder das gesamte Turnier durchsimulieren.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="generateKnockoutFromTable()" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-600 transition">
+                            🔄 K.O.-Baum aus Tabelle neu auslosen
+                        </button>
+                        <button onclick="simulateEntireKnockout()" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 shadow-lg shadow-amber-500/20 transition">
+                            🏆 Komplette K.O.-Phase bis Finale simulieren
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Knockout Live Conference Banner (Hidden by default) -->
+                <div id="koLiveConferenceBanner" class="hidden mt-4 p-3.5 rounded-xl bg-emerald-950/85 border border-emerald-400/50 text-emerald-100">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 live-badge"></span>
+                            <span id="koLiveStageTitle" class="text-xs font-extrabold uppercase tracking-wider text-emerald-300">K.O.-LIVE-KONFERENZ LÄUFT</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="koLiveLegBadge" class="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-900 text-cyan-300 border border-cyan-500/30">Hinspiel</span>
+                            <span id="koLiveMinuteDisplay" class="text-sm font-black px-2 py-0.5 rounded bg-emerald-500 text-slate-950">1'</span>
+                            <button onclick="stopKoLiveTicker()" class="px-2 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/40 text-rose-200 text-[11px] font-bold border border-rose-400/40 transition">⏹ Stopp</button>
+                        </div>
+                    </div>
+                    <div class="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+                        <div id="koLiveProgressBar" class="bg-emerald-400 h-1.5 transition-all duration-100" style="width: 1%"></div>
+                    </div>
+                    <p id="koLiveGoalTicker" class="text-xs text-emerald-200 mt-2 font-medium truncate">Anpfiff in den K.O.-Stadien...</p>
+                </div>
+            </div>
+
+            <!-- Champion Banner (Shown when Final is decided) -->
+            <div id="championBanner" class="hidden ucl-card rounded-2xl p-6 border-2 border-amber-400/70 bg-gradient-to-r from-amber-950/40 via-blue-950/80 to-amber-950/40 text-center shadow-2xl">
+                <div class="text-4xl mb-2">🏆✨</div>
+                <p id="championBannerTitle" class="text-xs font-black uppercase tracking-widest text-amber-300">UEFA Champions League Sieger 2026/27</p>
+                <h3 id="championName" class="text-2xl sm:text-4xl font-black text-white mt-1"></h3>
+                <p id="championSub" class="text-xs sm:text-sm text-slate-300 mt-1"></p>
+
+                <!-- Odds & Probability Breakdown Box -->
+                <div id="championOddsBox" class="mt-4 max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-left"></div>
+            </div>
+
+            <!-- Knockout Rounds Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Knockout Play-offs -->
+                <div class="ucl-card rounded-2xl p-4 sm:p-5">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <div>
+                            <h3 class="text-base font-extrabold text-amber-300">1. K.O.-Runden-Play-offs (Platz 9–24)</h3>
+                            <p class="text-xs text-slate-400">Hin- & Rückspiel • Sieger ziehen ins Achtelfinale ein</p>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="startKnockoutLiveTicker('playoffs')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow transition flex items-center gap-1">
+                                <span>⏱️</span> Live (90')
+                            </button>
+                            <button onclick="simulateKnockoutStage('playoffs')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/30 transition">
+                                🎲 Simulieren
+                            </button>
+                        </div>
+                    </div>
+                    <div id="ko-playoffs" class="space-y-2.5"></div>
+                </div>
+
+                <!-- Round of 16 -->
+                <div class="ucl-card rounded-2xl p-4 sm:p-5">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <div>
+                            <h3 class="text-base font-extrabold text-emerald-300">2. Achtelfinale (Top 8 + Play-off-Sieger)</h3>
+                            <p class="text-xs text-slate-400">Hin- & Rückspiel • Top 8 haben Rückspiel-Heimrecht</p>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="startKnockoutLiveTicker('r16')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow transition flex items-center gap-1">
+                                <span>⏱️</span> Live (90')
+                            </button>
+                            <button onclick="simulateKnockoutStage('r16')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-400/30 transition">
+                                🎲 Simulieren
+                            </button>
+                        </div>
+                    </div>
+                    <div id="ko-r16" class="space-y-2.5"></div>
+                </div>
+
+                <!-- Quarter-Finals -->
+                <div class="ucl-card rounded-2xl p-4 sm:p-5">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <div>
+                            <h3 class="text-base font-extrabold text-cyan-300">3. Viertelfinale</h3>
+                            <p class="text-xs text-slate-400">Hin- & Rückspiel</p>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="startKnockoutLiveTicker('qf')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow transition flex items-center gap-1">
+                                <span>⏱️</span> Live (90')
+                            </button>
+                            <button onclick="simulateKnockoutStage('qf')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-400/30 transition">
+                                🎲 Simulieren
+                            </button>
+                        </div>
+                    </div>
+                    <div id="ko-qf" class="space-y-2.5"></div>
+                </div>
+
+                <!-- Semi-Finals & Final -->
+                <div class="space-y-6">
+                    <div class="ucl-card rounded-2xl p-4 sm:p-5">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                            <div>
+                                <h3 class="text-base font-extrabold text-purple-300">4. Halbfinale</h3>
+                                <p class="text-xs text-slate-400">Hin- & Rückspiel</p>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <button onclick="startKnockoutLiveTicker('sf')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow transition flex items-center gap-1">
+                                    <span>⏱️</span> Live (90')
+                                </button>
+                                <button onclick="simulateKnockoutStage('sf')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-400/30 transition">
+                                    🎲 Simulieren
+                                </button>
+                            </div>
+                        </div>
+                        <div id="ko-sf" class="space-y-2.5"></div>
+                    </div>
+
+                    <div class="ucl-card rounded-2xl p-4 sm:p-5 border border-amber-400/40">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                            <div>
+                                <h3 id="koFinalVenueTitle" class="text-base font-extrabold text-amber-300">5. Finale (Estadio Metropolitano, Madrid)</h3>
+                                <p class="text-xs text-slate-400">Einzelspiel inkl. Verlängerung & Elfmeterschießen</p>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <button onclick="startKnockoutLiveTicker('final')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow transition flex items-center gap-1">
+                                    <span>⏱️</span> Live (90')
+                                </button>
+                                <button onclick="simulateKnockoutStage('final')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-400 hover:bg-amber-300 text-slate-950 transition">
+                                    🏆 Finale simulieren
+                                </button>
+                            </div>
+                        </div>
+                        <div id="ko-final"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 2B: GLOBAL COMMUNITY WINNER STATS     -->
+        <!-- ========================================== -->
+        <section id="view-stats" class="hidden space-y-6">
+            <div class="ucl-card rounded-2xl p-5 shadow-xl">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span id="cloudSyncBadge" class="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">🟢 Live Cloud-Synchronisation aktiv</span>
+                            <span id="statsCompSubtitle" class="text-xs font-bold uppercase tracking-widest text-cyan-400">UEFA Champions League</span>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-black text-white mt-1">Globale Sieger-Statistik (Alle Simulationen)</h2>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-0.5">Jedes Mal, wenn ein Finale simuliert wird, fließt der Sieger automatisch in diese globale Auswertung ein.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="runMonteCarloBatch(10)" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-400 to-cyan-500 hover:from-emerald-300 hover:to-cyan-400 text-slate-950 shadow-lg shadow-emerald-500/20 transition flex items-center gap-1.5">
+                            <span>🚀</span> +10 komplette Saisons im Schnelllauf simulieren
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Summary KPI Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800">
+                        <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Simulierte Turniere (Gesamt)</div>
+                        <div id="statsTotalCount" class="text-2xl sm:text-3xl font-black text-white mt-1">0</div>
+                        <div class="text-[11px] text-slate-400 mt-0.5">Inklusive aller Community-Simulationen</div>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-amber-500/30">
+                        <div class="text-xs font-bold uppercase tracking-wider text-amber-300">Häufigster Champion</div>
+                        <div id="statsTopWinner" class="text-xl sm:text-2xl font-black text-white mt-1 truncate">Noch keine Daten</div>
+                        <div id="statsTopWinnerSub" class="text-[11px] text-amber-300/90 mt-0.5">Simuliere ein Finale zum Starten</div>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-cyan-500/30">
+                        <div class="text-xs font-bold uppercase tracking-wider text-cyan-300">Letzter Turniersieger</div>
+                        <div id="statsLastWinner" class="text-xl sm:text-2xl font-black text-white mt-1 truncate">–</div>
+                        <div id="statsLastWinnerSub" class="text-[11px] text-slate-400 mt-0.5">Wird nach jedem Finale aktualisiert</div>
+                    </div>
+                </div>
+
+                <!-- All 36 Teams Win Percentage Leaderboard -->
+                <div id="globalStatsLeaderboard" class="space-y-2"></div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 3: TEAM RATINGS & SIMULATION ENGINE   -->
+        <!-- ========================================== -->
+        <section id="view-teams" class="hidden space-y-6">
+            <div class="ucl-card rounded-2xl p-5 shadow-xl">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-black text-white">Team-Stärken (ELO / Offensive & Defensive) anpassen</h2>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-0.5">Unsere Poisson-xG-Engine berechnet für jede Partie die erwarteten Tore (Expected Goals) aus Offensivstärke, Defensivstärke und Heimvorteil.</p>
+                    </div>
+                    <button onclick="resetTeamRatings()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 transition self-start">
+                        🔄 Standard-Werte wiederherstellen
+                    </button>
+                </div>
+
+                <div id="teamsRatingGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Team Schedule Modal (Click on any team in the table) -->
+    <div id="teamModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="ucl-card rounded-2xl max-w-lg w-full p-5 shadow-2xl border border-cyan-400/30">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-700">
+                <div class="flex items-center gap-2.5">
+                    <span id="modalTeamFlag" class="text-2xl"></span>
+                    <div>
+                        <h3 id="modalTeamName" class="text-lg font-black text-white"></h3>
+                        <p id="modalTeamStats" class="text-xs text-cyan-300 font-semibold"></p>
+                    </div>
+                </div>
+                <button onclick="closeTeamModal()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold">✕</button>
+            </div>
+            <div id="modalMatchesList" class="my-4 space-y-2 max-h-[60vh] overflow-y-auto pr-1"></div>
+            <div class="flex justify-end">
+                <button onclick="closeTeamModal()" class="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white">Schließen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 hidden px-4 py-3 rounded-xl bg-slate-900/95 border border-cyan-400/50 text-white text-xs sm:text-sm font-semibold shadow-2xl flex items-center gap-2.5">
+        <span id="toastIcon">⚡</span>
+        <span id="toastText"></span>
+    </div>
+
+    <script>
+        'use strict';
+
+        // =========================================================================
+        // 0. SECURITY UTILITIES (XSS SANITIZATION, DEEP FREEZE & INPUT VALIDATION)
+        // =========================================================================
+        function escapeHTML(value) {
+            if (value === null || value === undefined) return '';
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function deepFreeze(obj) {
+            if (obj && typeof obj === 'object' && !Object.isFrozen(obj)) {
+                Object.freeze(obj);
+                Object.keys(obj).forEach(key => deepFreeze(obj[key]));
+            }
+            return obj;
+        }
+
+        function clampInt(val, min, max, fallback = min) {
+            const parsed = Number.parseInt(val, 10);
+            if (!Number.isFinite(parsed)) return fallback;
+            return Math.max(min, Math.min(max, parsed));
+        }
+
+        // Precomputed factorials (0! to 15!) for fast, overflow-free Poisson probabilities
+        const FACTORIALS = Object.freeze([
+            1, 1, 2, 6, 24, 120, 720, 5040, 40320,
+            362880, 3628800, 39916800, 479001600,
+            6227020800, 87178291200, 1307674368000
+        ]);
+
+        // =========================================================================
+        // 1A. UEFA CHAMPIONS LEAGUE 2026/27 TEAMS & FIXTURES
+        // =========================================================================
+        const UCL_TEAMS = deepFreeze([
+            { id: 'MCI', name: 'Manchester City', short: 'Man City', country: 'ENG', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', att: 93, def: 89, coeff: 1 },
+            { id: 'RMA', name: 'Real Madrid', short: 'Real Madrid', country: 'ESP', flag: '🇪🇸', att: 94, def: 88, coeff: 2 },
+            { id: 'BAY', name: 'FC Bayern München', short: 'Bayern', country: 'GER', flag: '🇩🇪', att: 92, def: 86, coeff: 3 },
+            { id: 'PSG', name: 'Paris Saint-Germain', short: 'PSG', country: 'FRA', flag: '🇫🇷', att: 91, def: 86, coeff: 4 },
+            { id: 'LIV', name: 'FC Liverpool', short: 'Liverpool', country: 'ENG', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', att: 92, def: 88, coeff: 5 },
+            { id: 'INT', name: 'Inter Mailand', short: 'Inter', country: 'ITA', flag: '🇮🇹', att: 87, def: 89, coeff: 6 },
+            { id: 'BAR', name: 'FC Barcelona', short: 'Barcelona', country: 'ESP', flag: '🇪🇸', att: 92, def: 85, coeff: 7 },
+            { id: 'ARS', name: 'FC Arsenal', short: 'Arsenal', country: 'ENG', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', att: 89, def: 91, coeff: 8 },
+            { id: 'BVB', name: 'Borussia Dortmund', short: 'Dortmund', country: 'GER', flag: '🇩🇪', att: 85, def: 82, coeff: 9 },
+            { id: 'ATM', name: 'Atlético Madrid', short: 'Atlético', country: 'ESP', flag: '🇪🇸', att: 84, def: 87, coeff: 10 },
+            { id: 'RBL', name: 'RB Leipzig', short: 'RB Leipzig', country: 'GER', flag: '🇩🇪', att: 82, def: 80, coeff: 11 },
+            { id: 'POR', name: 'FC Porto', short: 'FC Porto', country: 'POR', flag: '🇵🇹', att: 80, def: 81, coeff: 12 },
+            { id: 'MUN', name: 'Manchester United', short: 'Man United', country: 'ENG', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', att: 82, def: 79, coeff: 13 },
+            { id: 'NAP', name: 'SSC Neapel', short: 'Neapel', country: 'ITA', flag: '🇮🇹', att: 85, def: 83, coeff: 14 },
+            { id: 'ROM', name: 'AS Rom', short: 'AS Rom', country: 'ITA', flag: '🇮🇹', att: 83, def: 82, coeff: 15 },
+            { id: 'VIL', name: 'FC Villarreal', short: 'Villarreal', country: 'ESP', flag: '🇪🇸', att: 83, def: 79, coeff: 16 },
+            { id: 'AVL', name: 'Aston Villa', short: 'Aston Villa', country: 'ENG', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', att: 86, def: 84, coeff: 17 },
+            { id: 'SCP', name: 'Sporting CP', short: 'Sporting', country: 'POR', flag: '🇵🇹', att: 84, def: 82, coeff: 18 },
+            { id: 'PSV', name: 'PSV Eindhoven', short: 'PSV', country: 'NED', flag: '🇳🇱', att: 82, def: 80, coeff: 19 },
+            { id: 'FEY', name: 'Feyenoord Rotterdam', short: 'Feyenoord', country: 'NED', flag: '🇳🇱', att: 80, def: 78, coeff: 20 },
+            { id: 'STU', name: 'VfB Stuttgart', short: 'Stuttgart', country: 'GER', flag: '🇩🇪', att: 84, def: 81, coeff: 21 },
+            { id: 'BET', name: 'Real Betis', short: 'Real Betis', country: 'ESP', flag: '🇪🇸', att: 82, def: 82, coeff: 22 },
+            { id: 'BRU', name: 'FC Brügge', short: 'FC Brügge', country: 'BEL', flag: '🇧🇪', att: 80, def: 79, coeff: 23 },
+            { id: 'SHA', name: 'Schachtar Donezk', short: 'Schachtar', country: 'UKR', flag: '🇺🇦', att: 77, def: 76, coeff: 24 },
+            { id: 'LIL', name: 'LOSC Lille', short: 'Lille', country: 'FRA', flag: '🇫🇷', att: 80, def: 80, coeff: 25 },
+            { id: 'LEN', name: 'RC Lens', short: 'RC Lens', country: 'FRA', flag: '🇫🇷', att: 79, def: 79, coeff: 26 },
+            { id: 'GAL', name: 'Galatasaray Istanbul', short: 'Galatasaray', country: 'TUR', flag: '🇹🇷', att: 82, def: 77, coeff: 27 },
+            { id: 'FEN', name: 'Fenerbahçe Istanbul', short: 'Fenerbahçe', country: 'TUR', flag: '🇹🇷', att: 80, def: 77, coeff: 28 },
+            { id: 'COM', name: 'Como 1907', short: 'Como 1907', country: 'ITA', flag: '🇮🇹', att: 83, def: 80, coeff: 29 },
+            { id: 'SLA', name: 'Slavia Prag', short: 'Slavia Prag', country: 'CZE', flag: '🇨🇿', att: 76, def: 75, coeff: 30 },
+            { id: 'BOD', name: 'FK Bodø/Glimt', short: 'Bodø/Glimt', country: 'NOR', flag: '🇳🇴', att: 78, def: 75, coeff: 31 },
+            { id: 'AEK', name: 'AEK Athen', short: 'AEK Athen', country: 'GRE', flag: '🇬🇷', att: 75, def: 75, coeff: 32 },
+            { id: 'LASK', name: 'LASK Linz', short: 'LASK', country: 'AUT', flag: '🇦🇹', att: 75, def: 74, coeff: 33 },
+            { id: 'SLO', name: 'ŠK Slovan Bratislava', short: 'Slovan', country: 'SVK', flag: '🇸🇰', att: 71, def: 70, coeff: 34 },
+            { id: 'VIK', name: 'Viking Stavanger', short: 'Viking', country: 'NOR', flag: '🇳🇴', att: 74, def: 72, coeff: 35 },
+            { id: 'SAB', name: 'Sabah FK', short: 'Sabah FK', country: 'AZE', flag: '🇦🇿', att: 72, def: 71, coeff: 36 }
+        ]);
+
+        const UCL_DATES = deepFreeze({
+            1: '8.–10. Sept. 2026',
+            2: '13./14. Okt. 2026',
+            3: '20./21. Okt. 2026',
+            4: '3./4. Nov. 2026',
+            5: '24./25. Nov. 2026',
+            6: '8./9. Dez. 2026',
+            7: '19./20. Jan. 2027',
+            8: '27. Jan. 2027'
+        });
+
+        const UCL_FIXTURES = deepFreeze([
+            // --- SPIELTAG 1 (Real Results) ---
+            { md: 1, home: 'AEK', away: 'LASK', hg: 1, ag: 0, realHg: 1, realAg: 0 },
+            { md: 1, home: 'BRU', away: 'AVL', hg: 2, ag: 3, realHg: 2, realAg: 3 },
+            { md: 1, home: 'BVB', away: 'VIL', hg: 3, ag: 2, realHg: 3, realAg: 2 },
+            { md: 1, home: 'POR', away: 'MCI', hg: 0, ag: 2, realHg: 0, realAg: 2 },
+            { md: 1, home: 'LIL', away: 'BET', hg: 2, ag: 3, realHg: 2, realAg: 3 },
+            { md: 1, home: 'RMA', away: 'INT', hg: 2, ag: 1, realHg: 2, realAg: 1 },
+            { md: 1, home: 'BAR', away: 'FEY', hg: 5, ag: 1, realHg: 5, realAg: 1 },
+            { md: 1, home: 'STU', away: 'VIK', hg: 3, ag: 1, realHg: 3, realAg: 1 },
+            { md: 1, home: 'LIV', away: 'ATM', hg: 2, ag: 1, realHg: 2, realAg: 1 },
+            { md: 1, home: 'PSG', away: 'SLO', hg: 6, ag: 1, realHg: 6, realAg: 1 },
+            { md: 1, home: 'SCP', away: 'GAL', hg: 3, ag: 1, realHg: 3, realAg: 1 },
+            { md: 1, home: 'NAP', away: 'ARS', hg: 0, ag: 1, realHg: 0, realAg: 1 },
+            { md: 1, home: 'FEN', away: 'ROM', hg: 1, ag: 1, realHg: 1, realAg: 1 },
+            { md: 1, home: 'PSV', away: 'SHA', hg: 1, ag: 1, realHg: 1, realAg: 1 },
+            { md: 1, home: 'COM', away: 'RBL', hg: 4, ag: 1, realHg: 4, realAg: 1 },
+            { md: 1, home: 'BAY', away: 'BOD', hg: 5, ag: 0, realHg: 5, realAg: 0 },
+            { md: 1, home: 'MUN', away: 'SAB', hg: 4, ag: 0, realHg: 4, realAg: 0 },
+            { md: 1, home: 'SLA', away: 'LEN', hg: 2, ag: 3, realHg: 2, realAg: 3 },
+
+            // --- SPIELTAG 2 (Real Results) ---
+            { md: 2, home: 'LEN', away: 'SCP', hg: 0, ag: 2, realHg: 0, realAg: 2 },
+            { md: 2, home: 'SAB', away: 'SLA', hg: 2, ag: 0, realHg: 2, realAg: 0 },
+            { md: 2, home: 'ARS', away: 'LIL', hg: 3, ag: 0, realHg: 3, realAg: 0 },
+            { md: 2, home: 'ATM', away: 'MUN', hg: 2, ag: 0, realHg: 2, realAg: 0 },
+            { md: 2, home: 'INT', away: 'BRU', hg: 3, ag: 4, realHg: 3, realAg: 4 },
+            { md: 2, home: 'GAL', away: 'BAR', hg: 1, ag: 4, realHg: 1, realAg: 4 },
+            { md: 2, home: 'RBL', away: 'PSV', hg: 1, ag: 0, realHg: 1, realAg: 0 },
+            { md: 2, home: 'VIK', away: 'BAY', hg: 3, ag: 3, realHg: 3, realAg: 3 },
+            { md: 2, home: 'VIL', away: 'NAP', hg: 3, ag: 1, realHg: 3, realAg: 1 },
+            { md: 2, home: 'FEY', away: 'COM', hg: 3, ag: 2, realHg: 3, realAg: 2 },
+            { md: 2, home: 'LASK', away: 'LIV', hg: 3, ag: 6, realHg: 3, realAg: 6 },
+            { md: 2, home: 'ROM', away: 'RMA', hg: 3, ag: 4, realHg: 3, realAg: 4 },
+            { md: 2, home: 'AVL', away: 'FEN', hg: 6, ag: 0, realHg: 6, realAg: 0 },
+            { md: 2, home: 'SHA', away: 'AEK', hg: 3, ag: 1, realHg: 3, realAg: 1 },
+            { md: 2, home: 'BOD', away: 'BVB', hg: 1, ag: 0, realHg: 1, realAg: 0 },
+            { md: 2, home: 'MCI', away: 'PSG', hg: 2, ag: 4, realHg: 2, realAg: 4 },
+            { md: 2, home: 'BET', away: 'POR', hg: 3, ag: 2, realHg: 3, realAg: 2 },
+            { md: 2, home: 'SLO', away: 'STU', hg: 0, ag: 3, realHg: 0, realAg: 3 },
+
+            // --- SPIELTAG 3 (Real Results) ---
+            { md: 3, home: 'FEN', away: 'SLA', hg: 2, ag: 2, realHg: 2, realAg: 2 },
+            { md: 3, home: 'SAB', away: 'BVB', hg: 1, ag: 2, realHg: 1, realAg: 2 },
+            { md: 3, home: 'ROM', away: 'SLO', hg: 4, ag: 0, realHg: 4, realAg: 0 },
+            { md: 3, home: 'POR', away: 'PSV', hg: 0, ag: 1, realHg: 0, realAg: 1 },
+            { md: 3, home: 'LIV', away: 'VIL', hg: 4, ag: 3, realHg: 4, realAg: 3 },
+            { md: 3, home: 'MCI', away: 'AEK', hg: 5, ag: 1, realHg: 5, realAg: 1 },
+            { md: 3, home: 'PSG', away: 'BAR', hg: 4, ag: 2, realHg: 4, realAg: 2 },
+            { md: 3, home: 'NAP', away: 'BOD', hg: 4, ag: 3, realHg: 4, realAg: 3 },
+            { md: 3, home: 'STU', away: 'ATM', hg: 1, ag: 1, realHg: 1, realAg: 1 },
+            { md: 3, home: 'COM', away: 'MUN', hg: 4, ag: 1, realHg: 4, realAg: 1 },
+            { md: 3, home: 'LIL', away: 'GAL', hg: 2, ag: 4, realHg: 2, realAg: 4 },
+            { md: 3, home: 'AVL', away: 'VIK', hg: 3, ag: 1, realHg: 3, realAg: 1 },
+            { md: 3, home: 'BRU', away: 'LEN', hg: 3, ag: 0, realHg: 3, realAg: 0 },
+            { md: 3, home: 'BAY', away: 'ARS', hg: 2, ag: 2, realHg: 2, realAg: 2 },
+            { md: 3, home: 'INT', away: 'SHA', hg: 1, ag: 0, realHg: 1, realAg: 0 },
+            { md: 3, home: 'RMA', away: 'RBL', hg: 4, ag: 1, realHg: 4, realAg: 1 },
+            { md: 3, home: 'BET', away: 'FEY', hg: 1, ag: 0, realHg: 1, realAg: 0 },
+            { md: 3, home: 'SCP', away: 'LASK', hg: 2, ag: 3, realHg: 2, realAg: 3 },
+
+            // --- SPIELTAG 4 (Real Results) ---
+            { md: 4, home: 'SHA', away: 'SCP', hg: 0, ag: 1, realHg: 0, realAg: 1 },
+            { md: 4, home: 'GAL', away: 'STU', hg: 2, ag: 0, realHg: 2, realAg: 0 },
+            { md: 4, home: 'ATM', away: 'BAY', hg: 0, ag: 2, realHg: 0, realAg: 2 },
+            { md: 4, home: 'BAR', away: 'AVL', hg: 3, ag: 0, realHg: 3, realAg: 0 },
+            { md: 4, home: 'FEY', away: 'INT', hg: 0, ag: 3, realHg: 0, realAg: 3 },
+            { md: 4, home: 'BOD', away: 'LIL', hg: 0, ag: 0, realHg: 0, realAg: 0 },
+            { md: 4, home: 'LASK', away: 'SLO', hg: 4, ag: 0, realHg: 4, realAg: 0 },
+            { md: 4, home: 'MUN', away: 'ROM', hg: 3, ag: 2, realHg: 3, realAg: 2 },
+            { md: 4, home: 'VIL', away: 'PSG', hg: 0, ag: 6, realHg: 0, realAg: 6 },
+            { md: 4, home: 'AEK', away: 'RMA', hg: 2, ag: 3, realHg: 2, realAg: 3 },
+            { md: 4, home: 'FEN', away: 'LIV', hg: 3, ag: 2, realHg: 3, realAg: 2 },
+            { md: 4, home: 'BVB', away: 'BET', hg: 2, ag: 1, realHg: 2, realAg: 1 },
+            { md: 4, home: 'POR', away: 'NAP', hg: 4, ag: 1, realHg: 4, realAg: 1 },
+            { md: 4, home: 'PSV', away: 'BRU', hg: 1, ag: 2, realHg: 1, realAg: 2 },
+            { md: 4, home: 'RBL', away: 'MCI', hg: 2, ag: 3, realHg: 2, realAg: 3 },
+            { md: 4, home: 'LEN', away: 'COM', hg: 1, ag: 9, realHg: 1, realAg: 9 },
+            { md: 4, home: 'SLA', away: 'ARS', hg: 1, ag: 2, realHg: 1, realAg: 2 },
+            { md: 4, home: 'VIK', away: 'SAB', hg: 4, ag: 1, realHg: 4, realAg: 1 },
+
+            // --- SPIELTAG 5 ---
+            { md: 5, home: 'BOD', away: 'LASK', hg: null, ag: null },
+            { md: 5, home: 'GAL', away: 'AVL', hg: null, ag: null },
+            { md: 5, home: 'ARS', away: 'BVB', hg: null, ag: null },
+            { md: 5, home: 'COM', away: 'AEK', hg: null, ag: null },
+            { md: 5, home: 'FEY', away: 'POR', hg: null, ag: null },
+            { md: 5, home: 'MCI', away: 'NAP', hg: null, ag: null },
+            { md: 5, home: 'RBL', away: 'LEN', hg: null, ag: null },
+            { md: 5, home: 'RMA', away: 'PSV', hg: null, ag: null },
+            { md: 5, home: 'SLO', away: 'BET', hg: null, ag: null },
+            { md: 5, home: 'SAB', away: 'BAR', hg: null, ag: null },
+            { md: 5, home: 'SLA', away: 'VIL', hg: null, ag: null },
+            { md: 5, home: 'ATM', away: 'VIK', hg: null, ag: null },
+            { md: 5, home: 'BRU', away: 'LIV', hg: null, ag: null },
+            { md: 5, home: 'INT', away: 'STU', hg: null, ag: null },
+            { md: 5, home: 'SHA', away: 'FEN', hg: null, ag: null },
+            { md: 5, home: 'LIL', away: 'BAY', hg: null, ag: null },
+            { md: 5, home: 'PSG', away: 'ROM', hg: null, ag: null },
+            { md: 5, home: 'SCP', away: 'MUN', hg: null, ag: null },
+
+            // --- SPIELTAG 6 ---
+            { md: 6, home: 'VIK', away: 'FEY', hg: null, ag: null },
+            { md: 6, home: 'VIL', away: 'SAB', hg: null, ag: null },
+            { md: 6, home: 'AEK', away: 'GAL', hg: null, ag: null },
+            { md: 6, home: 'ROM', away: 'SCP', hg: null, ag: null },
+            { md: 6, home: 'AVL', away: 'PSG', hg: null, ag: null },
+            { md: 6, home: 'BAR', away: 'MCI', hg: null, ag: null },
+            { md: 6, home: 'BAY', away: 'SLA', hg: null, ag: null },
+            { md: 6, home: 'MUN', away: 'RBL', hg: null, ag: null },
+            { md: 6, home: 'NAP', away: 'BRU', hg: null, ag: null },
+            { md: 6, home: 'BET', away: 'COM', hg: null, ag: null },
+            { md: 6, home: 'SLO', away: 'SHA', hg: null, ag: null },
+            { md: 6, home: 'ARS', away: 'RMA', hg: null, ag: null },
+            { md: 6, home: 'BVB', away: 'INT', hg: null, ag: null },
+            { md: 6, home: 'LASK', away: 'FEN', hg: null, ag: null },
+            { md: 6, home: 'LIV', away: 'POR', hg: null, ag: null },
+            { md: 6, home: 'PSV', away: 'ATM', hg: null, ag: null },
+            { md: 6, home: 'LEN', away: 'BOD', hg: null, ag: null },
+            { md: 6, home: 'STU', away: 'LIL', hg: null, ag: null },
+
+            // --- SPIELTAG 7 ---
+            { md: 7, home: 'BOD', away: 'ATM', hg: null, ag: null },
+            { md: 7, home: 'GAL', away: 'FEY', hg: null, ag: null },
+            { md: 7, home: 'AEK', away: 'ROM', hg: null, ag: null },
+            { md: 7, home: 'AVL', away: 'BVB', hg: null, ag: null },
+            { md: 7, home: 'INT', away: 'LIV', hg: null, ag: null },
+            { md: 7, home: 'POR', away: 'SLA', hg: null, ag: null },
+            { md: 7, home: 'LIL', away: 'SLO', hg: null, ag: null },
+            { md: 7, home: 'RMA', away: 'LASK', hg: null, ag: null },
+            { md: 7, home: 'STU', away: 'BRU', hg: null, ag: null },
+            { md: 7, home: 'FEN', away: 'VIL', hg: null, ag: null },
+            { md: 7, home: 'SAB', away: 'NAP', hg: null, ag: null },
+            { md: 7, home: 'COM', away: 'PSG', hg: null, ag: null },
+            { md: 7, home: 'MUN', away: 'BAY', hg: null, ag: null },
+            { md: 7, home: 'RBL', away: 'SHA', hg: null, ag: null },
+            { md: 7, home: 'LEN', away: 'MCI', hg: null, ag: null },
+            { md: 7, home: 'BET', away: 'ARS', hg: null, ag: null },
+            { md: 7, home: 'SCP', away: 'BAR', hg: null, ag: null },
+            { md: 7, home: 'VIK', away: 'PSV', hg: null, ag: null },
+
+            // --- SPIELTAG 8 ---
+            { md: 8, home: 'ARS', away: 'SAB', hg: null, ag: null },
+            { md: 8, home: 'ROM', away: 'LIL', hg: null, ag: null },
+            { md: 8, home: 'ATM', away: 'FEN', hg: null, ag: null },
+            { md: 8, home: 'BVB', away: 'AEK', hg: null, ag: null },
+            { md: 8, home: 'BRU', away: 'BOD', hg: null, ag: null },
+            { md: 8, home: 'BAY', away: 'BET', hg: null, ag: null },
+            { md: 8, home: 'BAR', away: 'COM', hg: null, ag: null },
+            { md: 8, home: 'SHA', away: 'RMA', hg: null, ag: null },
+            { md: 8, home: 'FEY', away: 'RBL', hg: null, ag: null },
+            { md: 8, home: 'LASK', away: 'POR', hg: null, ag: null },
+            { md: 8, home: 'LIV', away: 'LEN', hg: null, ag: null },
+            { md: 8, home: 'MCI', away: 'SCP', hg: null, ag: null },
+            { md: 8, home: 'PSG', away: 'GAL', hg: null, ag: null },
+            { md: 8, home: 'PSV', away: 'STU', hg: null, ag: null },
+            { md: 8, home: 'SLA', away: 'AVL', hg: null, ag: null },
+            { md: 8, home: 'NAP', away: 'VIK', hg: null, ag: null },
+            { md: 8, home: 'VIL', away: 'MUN', hg: null, ag: null },
+            { md: 8, home: 'SLO', away: 'INT', hg: null, ag: null }
+        ]);
+
+        // =========================================================================
+        // 1B. UEFA EUROPA LEAGUE 2026/27 TEAMS & FIXTURES (OFFICIAL 36 TEAMS)
+        // =========================================================================
+        const UEL_TEAMS = deepFreeze([
+            { id: 'LEV', name: 'Bayer 04 Leverkusen', short: 'Leverkusen', country: 'GER', flag: '🇩🇪', att: 88, def: 86, coeff: 1 },
+            { id: 'JUV', name: 'Juventus Turin', short: 'Juventus', country: 'ITA', flag: '🇮🇹', att: 87, def: 88, coeff: 2 },
+            { id: 'MIL', name: 'AC Mailand', short: 'AC Mailand', country: 'ITA', flag: '🇮🇹', att: 87, def: 84, coeff: 3 },
+            { id: 'BEN', name: 'Benfica Lissabon', short: 'Benfica', country: 'POR', flag: '🇵🇹', att: 86, def: 84, coeff: 4 },
+            { id: 'MAR', name: 'Olympique Marseille', short: 'Marseille', country: 'FRA', flag: '🇫🇷', att: 85, def: 82, coeff: 5 },
+            { id: 'RSO', name: 'Real Sociedad', short: 'Real Sociedad', country: 'ESP', flag: '🇪🇸', att: 84, def: 84, coeff: 6 },
+            { id: 'BOU', name: 'AFC Bournemouth', short: 'Bournemouth', country: 'ENG', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', att: 85, def: 83, coeff: 7 },
+            { id: 'LYO', name: 'Olympique Lyon', short: 'Lyon', country: 'FRA', flag: '🇫🇷', att: 84, def: 81, coeff: 8 },
+            { id: 'CRY', name: 'Crystal Palace', short: 'Crystal Palace', country: 'ENG', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', att: 83, def: 82, coeff: 9 },
+            { id: 'OLY', name: 'Olympiakos Piräus', short: 'Olympiakos', country: 'GRE', flag: '🇬🇷', att: 82, def: 82, coeff: 10 },
+            { id: 'USG', name: 'Union Saint-Gilloise', short: 'Union SG', country: 'BEL', flag: '🇧🇪', att: 82, def: 81, coeff: 11 },
+            { id: 'HOF', name: 'TSG 1899 Hoffenheim', short: 'Hoffenheim', country: 'GER', flag: '🇩🇪', att: 82, def: 79, coeff: 12 },
+            { id: 'REN', name: 'Stade Rennes', short: 'Rennes', country: 'FRA', flag: '🇫🇷', att: 81, def: 81, coeff: 13 },
+            { id: 'CEL', name: 'Celta Vigo', short: 'Celta Vigo', country: 'ESP', flag: '🇪🇸', att: 82, def: 79, coeff: 14 },
+            { id: 'AZA', name: 'AZ Alkmaar', short: 'AZ Alkmaar', country: 'NED', flag: '🇳🇱', att: 81, def: 80, coeff: 15 },
+            { id: 'SAL', name: 'FC Red Bull Salzburg', short: 'RB Salzburg', country: 'AUT', flag: '🇦🇹', att: 80, def: 77, coeff: 16 },
+            { id: 'CLT', name: 'Celtic Glasgow', short: 'Celtic', country: 'SCO', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', att: 81, def: 78, coeff: 17 },
+            { id: 'BES', name: 'Beşiktaş Istanbul', short: 'Beşiktaş', country: 'TUR', flag: '🇹🇷', att: 81, def: 78, coeff: 18 },
+            { id: 'AND', name: 'RSC Anderlecht', short: 'Anderlecht', country: 'BEL', flag: '🇧🇪', att: 79, def: 79, coeff: 19 },
+            { id: 'DIN', name: 'GNK Dinamo Zagreb', short: 'Dinamo Zagreb', country: 'CRO', flag: '🇭🇷', att: 79, def: 78, coeff: 20 },
+            { id: 'SPP', name: 'Sparta Prag', short: 'Sparta Prag', country: 'CZE', flag: '🇨🇿', att: 79, def: 77, coeff: 21 },
+            { id: 'FER', name: 'Ferencváros Budapest', short: 'Ferencváros', country: 'HUN', flag: '🇭🇺', att: 80, def: 78, coeff: 22 },
+            { id: 'PLZ', name: 'Viktoria Pilsen', short: 'Viktoria Pilsen', country: 'CZE', flag: '🇨🇿', att: 78, def: 77, coeff: 23 },
+            { id: 'SGR', name: 'SK Sturm Graz', short: 'Sturm Graz', country: 'AUT', flag: '🇦🇹', att: 78, def: 77, coeff: 24 },
+            { id: 'SUN', name: 'AFC Sunderland', short: 'Sunderland', country: 'ENG', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', att: 79, def: 78, coeff: 25 },
+            { id: 'NEC', name: 'NEC Nijmegen', short: 'NEC Nijmegen', country: 'NED', flag: '🇳🇱', att: 78, def: 76, coeff: 26 },
+            { id: 'LPO', name: 'Lech Posen', short: 'Lech Posen', country: 'POL', flag: '🇵🇱', att: 76, def: 75, coeff: 27 },
+            { id: 'JAG', name: 'Jagiellonia Białystok', short: 'Jagiellonia', country: 'POL', flag: '🇵🇱', att: 76, def: 74, coeff: 28 },
+            { id: 'HAP', name: 'Hapoel Be’er Scheva', short: 'Be’er Scheva', country: 'ISR', flag: '🇮🇱', att: 75, def: 75, coeff: 29 },
+            { id: 'OMO', name: 'Omonia Nikosia', short: 'Omonia', country: 'CYP', flag: '🇨🇾', att: 75, def: 74, coeff: 30 },
+            { id: 'OFI', name: 'OFI Kreta', short: 'OFI Kreta', country: 'GRE', flag: '🇬🇷', att: 76, def: 75, coeff: 31 },
+            { id: 'NKC', name: 'NK Celje', short: 'NK Celje', country: 'SVN', flag: '🇸🇮', att: 75, def: 73, coeff: 32 },
+            { id: 'LSO', name: 'Lewski Sofia', short: 'Lewski Sofia', country: 'BUL', flag: '🇧🇬', att: 75, def: 75, coeff: 33 },
+            { id: 'LSK', name: 'Lillestrøm SK', short: 'Lillestrøm', country: 'NOR', flag: '🇳🇴', att: 73, def: 72, coeff: 34 },
+            { id: 'TOR', name: 'SC União Torreense', short: 'Torreense', country: 'POR', flag: '🇵🇹', att: 74, def: 72, coeff: 35 },
+            { id: 'ARA', name: 'FC Ararat-Armenia', short: 'Ararat-Armenia', country: 'ARM', flag: '🇦🇲', att: 71, def: 70, coeff: 36 }
+        ]);
+
+        const UEL_DATES = deepFreeze({
+            1: '16./17. Sept. 2026',
+            2: '15. Okt. 2026',
+            3: '22. Okt. 2026',
+            4: '4./5. Nov. 2026',
+            5: '26. Nov. 2026',
+            6: '10. Dez. 2026',
+            7: '21. Jan. 2027',
+            8: '28. Jan. 2027'
+        });
+
+        const UEL_FIXTURES = deepFreeze([
+            // --- SPIELTAG 1 (Real Results) ---
+            { md: 1, home: 'ARA', away: 'SPP', hg: 1, ag: 4, realHg: 1, realAg: 4 },
+            { md: 1, home: 'OMO', away: 'CEL', hg: 1, ag: 0, realHg: 1, realAg: 0 },
+            { md: 1, home: 'MIL', away: 'BEN', hg: 0, ag: 2, realHg: 0, realAg: 2 },
+            { md: 1, home: 'LEV', away: 'NKC', hg: 2, ag: 0, realHg: 2, realAg: 0 },
+            { md: 1, home: 'HAP', away: 'DIN', hg: 0, ag: 0, realHg: 0, realAg: 0 },
+            { md: 1, home: 'OLY', away: 'JAG', hg: 2, ag: 1, realHg: 2, realAg: 1 },
+            { md: 1, home: 'AND', away: 'LYO', hg: 1, ag: 2, realHg: 1, realAg: 2 },
+            { md: 1, home: 'SGR', away: 'REN', hg: 0, ag: 0, realHg: 0, realAg: 0 },
+            { md: 1, home: 'SUN', away: 'AZA', hg: 1, ag: 0, realHg: 1, realAg: 0 },
+            { md: 1, home: 'OFI', away: 'HOF', hg: 2, ag: 0, realHg: 2, realAg: 0 },
+            { md: 1, home: 'LSO', away: 'SAL', hg: 0, ag: 1, realHg: 0, realAg: 1 },
+            { md: 1, home: 'BES', away: 'MAR', hg: 4, ag: 1, realHg: 4, realAg: 1 },
+            { md: 1, home: 'CLT', away: 'FER', hg: 1, ag: 3, realHg: 1, realAg: 3 },
+            { md: 1, home: 'CRY', away: 'LPO', hg: 4, ag: 0, realHg: 4, realAg: 0 },
+            { md: 1, home: 'PLZ', away: 'USG', hg: 0, ag: 3, realHg: 0, realAg: 3 },
+            { md: 1, home: 'JUV', away: 'NEC', hg: 5, ag: 0, realHg: 5, realAg: 0 },
+            { md: 1, home: 'LSK', away: 'TOR', hg: 1, ag: 2, realHg: 1, realAg: 2 },
+            { md: 1, home: 'RSO', away: 'BOU', hg: 1, ag: 2, realHg: 1, realAg: 2 },
+
+            // --- SPIELTAG 2 (Real Results) ---
+            { md: 2, home: 'SPP', away: 'LSK', hg: 1, ag: 1, realHg: 1, realAg: 1 },
+            { md: 2, home: 'AZA', away: 'HAP', hg: 2, ag: 1, realHg: 2, realAg: 1 },
+            { md: 2, home: 'SAL', away: 'MIL', hg: 0, ag: 4, realHg: 0, realAg: 4 },
+            { md: 2, home: 'LPO', away: 'LEV', hg: 0, ag: 4, realHg: 0, realAg: 4 },
+            { md: 2, home: 'NKC', away: 'OMO', hg: 0, ag: 3, realHg: 0, realAg: 3 },
+            { md: 2, home: 'LYO', away: 'CRY', hg: 3, ag: 2, realHg: 3, realAg: 2 },
+            { md: 2, home: 'USG', away: 'RSO', hg: 1, ag: 1, realHg: 1, realAg: 1 },
+            { md: 2, home: 'TOR', away: 'SUN', hg: 1, ag: 2, realHg: 1, realAg: 2 },
+            { md: 2, home: 'BOU', away: 'SGR', hg: 3, ag: 0, realHg: 3, realAg: 0 },
+            { md: 2, home: 'FER', away: 'PLZ', hg: 2, ag: 1, realHg: 2, realAg: 1 },
+            { md: 2, home: 'DIN', away: 'AND', hg: 1, ag: 0, realHg: 1, realAg: 0 },
+            { md: 2, home: 'JAG', away: 'ARA', hg: 3, ag: 1, realHg: 3, realAg: 1 },
+            { md: 2, home: 'NEC', away: 'LSO', hg: 1, ag: 1, realHg: 1, realAg: 1 },
+            { md: 2, home: 'MAR', away: 'OLY', hg: 0, ag: 1, realHg: 0, realAg: 1 },
+            { md: 2, home: 'CEL', away: 'JUV', hg: 1, ag: 2, realHg: 1, realAg: 2 },
+            { md: 2, home: 'BEN', away: 'CLT', hg: 4, ag: 1, realHg: 4, realAg: 1 },
+            { md: 2, home: 'REN', away: 'OFI', hg: 2, ag: 1, realHg: 2, realAg: 1 },
+            { md: 2, home: 'HOF', away: 'BES', hg: 2, ag: 3, realHg: 2, realAg: 3 },
+
+            // --- SPIELTAG 3 (Real Results) ---
+            { md: 3, home: 'ARA', away: 'AZA', hg: 0, ag: 4, realHg: 0, realAg: 4 },
+            { md: 3, home: 'FER', away: 'TOR', hg: 4, ag: 1, realHg: 4, realAg: 1 },
+            { md: 3, home: 'DIN', away: 'NEC', hg: 2, ag: 4, realHg: 2, realAg: 4 },
+            { md: 3, home: 'JUV', away: 'REN', hg: 2, ag: 2, realHg: 2, realAg: 2 },
+            { md: 3, home: 'LPO', away: 'SUN', hg: 1, ag: 1, realHg: 1, realAg: 1 },
+            { md: 3, home: 'OFI', away: 'LEV', hg: 0, ag: 2, realHg: 0, realAg: 2 },
+            { md: 3, home: 'USG', away: 'HAP', hg: 4, ag: 0, realHg: 4, realAg: 0 },
+            { md: 3, home: 'SGR', away: 'MAR', hg: 1, ag: 0, realHg: 1, realAg: 0 },
+            { md: 3, home: 'BOU', away: 'MIL', hg: 3, ag: 0, realHg: 3, realAg: 0 },
+            { md: 3, home: 'BES', away: 'CRY', hg: 2, ag: 2, realHg: 2, realAg: 2 },
+            { md: 3, home: 'CLT', away: 'CEL', hg: 1, ag: 2, realHg: 1, realAg: 2 },
+            { md: 3, home: 'PLZ', away: 'LSO', hg: 1, ag: 2, realHg: 1, realAg: 2 },
+            { md: 3, home: 'JAG', away: 'AND', hg: 0, ag: 3, realHg: 0, realAg: 3 },
+            { md: 3, home: 'LSK', away: 'RSO', hg: 0, ag: 6, realHg: 0, realAg: 6 },
+            { md: 3, home: 'NKC', away: 'SAL', hg: 2, ag: 2, realHg: 2, realAg: 2 },
+            { md: 3, home: 'OLY', away: 'SPP', hg: 1, ag: 0, realHg: 1, realAg: 0 },
+            { md: 3, home: 'OMO', away: 'BEN', hg: 1, ag: 4, realHg: 1, realAg: 4 },
+            { md: 3, home: 'HOF', away: 'LYO', hg: 3, ag: 0, realHg: 3, realAg: 0 },
+
+            // --- SPIELTAG 4 (Real Results) ---
+            { md: 4, home: 'REN', away: 'OLY', hg: 0, ag: 0, realHg: 0, realAg: 0 },
+            { md: 4, home: 'MIL', away: 'FER', hg: 0, ag: 2, realHg: 0, realAg: 2 },
+            { md: 4, home: 'SPP', away: 'BOU', hg: 1, ag: 3, realHg: 1, realAg: 3 },
+            { md: 4, home: 'CRY', away: 'HOF', hg: 1, ag: 1, realHg: 1, ag: 1, realAg: 1 },
+            { md: 4, home: 'LSK', away: 'PLZ', hg: 0, ag: 1, realHg: 0, realAg: 1 },
+            { md: 4, home: 'NEC', away: 'OMO', hg: 3, ag: 1, realHg: 3, realAg: 1 },
+            { md: 4, home: 'LSO', away: 'JAG', hg: 1, ag: 0, realHg: 1, realAg: 0 },
+            { md: 4, home: 'RSO', away: 'LYO', hg: 1, ag: 1, realHg: 1, realAg: 1 },
+            { md: 4, home: 'AND', away: 'SAL', hg: 2, ag: 0, realHg: 2, realAg: 0 },
+            { md: 4, home: 'AZA', away: 'JUV', hg: 1, ag: 2, realHg: 1, realAg: 2 },
+            { md: 4, home: 'LEV', away: 'MAR', hg: 0, ag: 1, realHg: 0, realAg: 1 },
+            { md: 4, home: 'CLT', away: 'BES', hg: 3, ag: 2, realHg: 3, realAg: 2 },
+            { md: 4, home: 'HAP', away: 'OFI', hg: 0, ag: 2, realHg: 0, realAg: 2 },
+            { md: 4, home: 'CEL', away: 'USG', hg: 1, ag: 2, realHg: 1, realAg: 2 },
+            { md: 4, home: 'TOR', away: 'ARA', hg: 3, ag: 2, realHg: 3, realAg: 2 },
+            { md: 4, home: 'SGR', away: 'NKC', hg: 2, ag: 3, realHg: 2, realAg: 3 },
+            { md: 4, home: 'BEN', away: 'LPO', hg: 3, ag: 1, realHg: 3, realAg: 1 },
+            { md: 4, home: 'SUN', away: 'DIN', hg: 0, ag: 2, realHg: 0, realAg: 2 },
+
+            // --- SPIELTAG 5 ---
+            { md: 5, home: 'BES', away: 'HAP', hg: null, ag: null },
+            { md: 5, home: 'SAL', away: 'ARA', hg: null, ag: null },
+            { md: 5, home: 'PLZ', away: 'BEN', hg: null, ag: null },
+            { md: 5, home: 'DIN', away: 'LEV', hg: null, ag: null },
+            { md: 5, home: 'OLY', away: 'MIL', hg: null, ag: null },
+            { md: 5, home: 'MAR', away: 'LSO', hg: null, ag: null },
+            { md: 5, home: 'USG', away: 'LPO', hg: null, ag: null },
+            { md: 5, home: 'CEL', away: 'BOU', hg: null, ag: null },
+            { md: 5, home: 'SPP', away: 'AZA', hg: null, ag: null },
+            { md: 5, home: 'CRY', away: 'RSO', hg: null, ag: null },
+            { md: 5, home: 'FER', away: 'NKC', hg: null, ag: null },
+            { md: 5, home: 'JUV', away: 'OMO', hg: null, ag: null },
+            { md: 5, home: 'NEC', away: 'REN', hg: null, ag: null },
+            { md: 5, home: 'OFI', away: 'AND', hg: null, ag: null },
+            { md: 5, home: 'LYO', away: 'LSK', hg: null, ag: null },
+            { md: 5, home: 'TOR', away: 'CLT', hg: null, ag: null },
+            { md: 5, home: 'SUN', away: 'JAG', hg: null, ag: null },
+            { md: 5, home: 'HOF', away: 'SGR', hg: null, ag: null },
+
+            // --- SPIELTAG 6 ---
+            { md: 6, home: 'AZA', away: 'SGR', hg: null, ag: null },
+            { md: 6, home: 'ARA', away: 'NEC', hg: null, ag: null },
+            { md: 6, home: 'HAP', away: 'JUV', hg: null, ag: null },
+            { md: 6, home: 'JAG', away: 'CRY', hg: null, ag: null },
+            { md: 6, home: 'MAR', away: 'CEL', hg: null, ag: null },
+            { md: 6, home: 'OMO', away: 'CLT', hg: null, ag: null },
+            { md: 6, home: 'AND', away: 'HOF', hg: null, ag: null },
+            { md: 6, home: 'REN', away: 'DIN', hg: null, ag: null },
+            { md: 6, home: 'NKC', away: 'OLY', hg: null, ag: null },
+            { md: 6, home: 'MIL', away: 'SUN', hg: null, ag: null },
+            { md: 6, home: 'BOU', away: 'PLZ', hg: null, ag: null },
+            { md: 6, home: 'LEV', away: 'BES', hg: null, ag: null },
+            { md: 6, home: 'SAL', away: 'SPP', hg: null, ag: null },
+            { md: 6, home: 'LPO', away: 'FER', hg: null, ag: null },
+            { md: 6, home: 'LYO', away: 'USG', hg: null, ag: null },
+            { md: 6, home: 'LSO', away: 'LSK', hg: null, ag: null },
+            { md: 6, home: 'RSO', away: 'TOR', hg: null, ag: null },
+            { md: 6, home: 'BEN', away: 'OFI', hg: null, ag: null },
+
+            // --- SPIELTAG 7 ---
+            { md: 7, home: 'BES', away: 'USG', hg: null, ag: null },
+            { md: 7, home: 'ARA', away: 'NKC', hg: null, ag: null },
+            { md: 7, home: 'FER', away: 'JUV', hg: null, ag: null },
+            { md: 7, home: 'JAG', away: 'LYO', hg: null, ag: null },
+            { md: 7, home: 'LSK', away: 'BOU', hg: null, ag: null },
+            { md: 7, home: 'NEC', away: 'BEN', hg: null, ag: null },
+            { md: 7, home: 'OLY', away: 'HOF', hg: null, ag: null },
+            { md: 7, home: 'RSO', away: 'PLZ', hg: null, ag: null },
+            { md: 7, home: 'SGR', away: 'OFI', hg: null, ag: null },
+            { md: 7, home: 'AZA', away: 'DIN', hg: null, ag: null },
+            { md: 7, home: 'LEV', away: 'SAL', hg: null, ag: null },
+            { md: 7, home: 'CLT', away: 'MAR', hg: null, ag: null },
+            { md: 7, home: 'CRY', away: 'SPP', hg: null, ag: null },
+            { md: 7, home: 'HAP', away: 'CEL', hg: null, ag: null },
+            { md: 7, home: 'LPO', away: 'TOR', hg: null, ag: null },
+            { md: 7, home: 'LSO', away: 'MIL', hg: null, ag: null },
+            { md: 7, home: 'AND', away: 'SUN', hg: null, ag: null },
+            { md: 7, home: 'REN', away: 'OMO', hg: null, ag: null },
+
+            // --- SPIELTAG 8 ---
+            { md: 8, home: 'MIL', away: 'ARA', hg: null, ag: null },
+            { md: 8, home: 'SPP', away: 'REN', hg: null, ag: null },
+            { md: 8, home: 'BOU', away: 'HAP', hg: null, ag: null },
+            { md: 8, home: 'SAL', away: 'CRY', hg: null, ag: null },
+            { md: 8, home: 'PLZ', away: 'JAG', hg: null, ag: null },
+            { md: 8, home: 'DIN', away: 'SGR', hg: null, ag: null },
+            { md: 8, home: 'JUV', away: 'RSO', hg: null, ag: null },
+            { md: 8, home: 'NKC', away: 'NEC', hg: null, ag: null },
+            { md: 8, home: 'OFI', away: 'LPO', hg: null, ag: null },
+            { md: 8, home: 'MAR', away: 'AND', hg: null, ag: null },
+            { md: 8, home: 'LYO', away: 'LEV', hg: null, ag: null },
+            { md: 8, home: 'OMO', away: 'BES', hg: null, ag: null },
+            { md: 8, home: 'USG', away: 'CLT', hg: null, ag: null },
+            { md: 8, home: 'CEL', away: 'LSK', hg: null, ag: null },
+            { md: 8, home: 'TOR', away: 'OLY', hg: null, ag: null },
+            { md: 8, home: 'BEN', away: 'AZA', hg: null, ag: null },
+            { md: 8, home: 'SUN', away: 'LSO', hg: null, ag: null },
+            { md: 8, home: 'HOF', away: 'FER', hg: null, ag: null }
+        ]);
+
+        // =========================================================================
+        // 2. MULTI-COMPETITION STATE MANAGEMENT (UCL & UEL)
+        // =========================================================================
+        const COMPETITIONS_META = deepFreeze({
+            ucl: {
+                id: 'ucl',
+                name: 'UEFA Champions League',
+                title: 'UEFA Champions League Simulator',
+                winnerTitle: 'UEFA Champions League Sieger 2026/27',
+                finalVenue: '5. Finale (Estadio Metropolitano, Madrid)',
+                initialTeams: UCL_TEAMS,
+                initialFixtures: UCL_FIXTURES,
+                dates: UCL_DATES
+            },
+            uel: {
+                id: 'uel',
+                name: 'UEFA Europa League',
+                title: 'UEFA Europa League Simulator',
+                winnerTitle: 'UEFA Europa League Sieger 2026/27',
+                finalVenue: '5. Finale (Stadion Frankfurt)',
+                initialTeams: UEL_TEAMS,
+                initialFixtures: UEL_FIXTURES,
+                dates: UEL_DATES
+            }
+        });
+
+        const competitionsState = {
+            ucl: {
+                teams: JSON.parse(JSON.stringify(UCL_TEAMS)),
+                fixtures: JSON.parse(JSON.stringify(UCL_FIXTURES)).map((f, idx) => ({ ...f, id: idx })),
+                currentMatchday: 5,
+                knockoutState: null,
+                knockoutNeedsRefresh: true,
+                validIds: new Set(UCL_TEAMS.map(t => t.id))
+            },
+            uel: {
+                teams: JSON.parse(JSON.stringify(UEL_TEAMS)),
+                fixtures: JSON.parse(JSON.stringify(UEL_FIXTURES)).map((f, idx) => ({ ...f, id: idx })),
+                currentMatchday: 5,
+                knockoutState: null,
+                knockoutNeedsRefresh: true,
+                validIds: new Set(UEL_TEAMS.map(t => t.id))
+            }
+        };
+
+        let activeComp = 'ucl';
+        let teams = competitionsState.ucl.teams;
+        let fixtures = competitionsState.ucl.fixtures;
+        let currentMatchday = competitionsState.ucl.currentMatchday;
+        let MATCHDAY_DATES = UCL_DATES;
+        let tableFilter = 'all';
+        let liveInterval = null;
+        let koLiveInterval = null;
+        let knockoutState = null;
+        let knockoutNeedsRefresh = true;
+        let chaosLevel = 35; // 0 = strict ratings, 35 = realistic, 100 = pure random chaos
+        let introAnimTimeout = null;
+        let introHideTimeout = null;
+
+        // Global Community Winner Statistics State (Updated in real-time via Cloud Firestore)
+        window.globalWinStats = {
+            ucl: { total: 0, wins: {}, lastWinner: null },
+            uel: { total: 0, wins: {}, lastWinner: null }
+        };
+
+        function getTeamGlobalWinData(teamId, compKey = activeComp) {
+            const compData = window.globalWinStats[compKey] || { total: 0, wins: {} };
+            const total = Number(compData.total) || 0;
+            const wins = Number((compData.wins && compData.wins[teamId]) || 0);
+            const pct = total > 0 ? (wins / total) * 100 : 0;
+            return { wins, total, pct };
+        }
+
+        function updateGlobalBadgesAndViews() {
+            const compData = window.globalWinStats[activeComp] || { total: 0, wins: {} };
+            const navBadge = document.getElementById('navTotalSimsBadge');
+            if (navBadge) {
+                navBadge.textContent = `${Number(compData.total) || 0} Sims`;
+            }
+            renderStandings();
+            if (!document.getElementById('view-knockout').classList.contains('hidden') && knockoutState) {
+                renderKnockoutView();
+            }
+            if (!document.getElementById('view-stats').classList.contains('hidden')) {
+                renderGlobalStatsView();
+            }
+        }
+        window.onGlobalStatsUpdated = updateGlobalBadgesAndViews;
+
+        function getIntroLogoSVG(compKey) {
+            if (compKey === 'ucl') {
+                return `
+                    <svg class="w-28 h-28 sm:w-32 sm:h-32 text-white drop-shadow-[0_0_20px_rgba(56,189,248,0.85)]" viewBox="0 0 120 120" fill="none">
+                        <circle cx="60" cy="60" r="54" stroke="url(#uclGrad)" stroke-width="3.5"/>
+                        <circle cx="60" cy="60" r="44" stroke="currentColor" stroke-opacity="0.3" stroke-width="1.5" stroke-dasharray="5 5"/>
+                        <!-- Central & Surrounding UCL Starball Stars -->
+                        <path fill="currentColor" d="M60 8L64.2 21H77.8L66.8 29L71 42L60 34L49 42L53.2 29L42.2 21H55.8L60 8Z"/>
+                        <path fill="currentColor" d="M60 78L64.2 91H77.8L66.8 99L71 112L60 104L49 112L53.2 99L42.2 91H55.8L60 78Z"/>
+                        <path fill="currentColor" d="M22 40L26.2 53H39.8L28.8 61L33 74L22 66L11 74L15.2 61L4.2 53H17.8L22 40Z"/>
+                        <path fill="currentColor" d="M98 40L102.2 53H115.8L104.8 61L109 74L98 66L87 74L91.2 61L80.2 53H93.8L98 40Z"/>
+                        <path fill="#38bdf8" d="M60 41L64.8 55.5H80L67.6 64.5L72.4 79L60 70L47.6 79L52.4 64.5L40 55.5H55.2L60 41Z"/>
+                        <defs>
+                            <linearGradient id="uclGrad" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#38bdf8"/>
+                                <stop offset="0.5" stop-color="#ffffff"/>
+                                <stop offset="1" stop-color="#3b82f6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                `;
+            } else {
+                return `
+                    <svg class="w-28 h-28 sm:w-32 sm:h-32 text-white drop-shadow-[0_0_20px_rgba(251,146,60,0.85)]" viewBox="0 0 120 120" fill="none">
+                        <!-- Iconic Europa League Octagonal Energy Wave Crest -->
+                        <polygon points="60,6 104,28 112,78 82,112 38,112 8,78 16,28" stroke="url(#uelGrad)" stroke-width="4.5" fill="rgba(251,146,60,0.14)"/>
+                        <!-- UEL Cup Chalice -->
+                        <path d="M36 30H84L75 66C72.5 77 66 84 60 86.5C54 84 47.5 77 45 66L36 30Z" fill="url(#uelGrad)"/>
+                        <path d="M52 86H68V97H52V86Z" fill="#fde68a"/>
+                        <path d="M41 97H79V104H41V97Z" fill="currentColor"/>
+                        <!-- Characteristic Orange Energy Chevron Across Trophy -->
+                        <path d="M24 53L43 71L60 56L77 71L96 53" stroke="#431407" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M24 53L43 71L60 56L77 71L96 53" stroke="#fb923c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <defs>
+                            <linearGradient id="uelGrad" x1="20" y1="15" x2="100" y2="105" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#fde047"/>
+                                <stop offset="0.5" stop-color="#fb923c"/>
+                                <stop offset="1" stop-color="#ea580c"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                `;
+            }
+        }
+
+        function playCompetitionIntroAnimation(compKey) {
+            const overlay = document.getElementById('competitionIntroOverlay');
+            if (!overlay) return;
+
+            if (introAnimTimeout) clearTimeout(introAnimTimeout);
+            if (introHideTimeout) clearTimeout(introHideTimeout);
+
+            const radialGlow = document.getElementById('introRadialGlow');
+            const ring1 = document.getElementById('introRing1');
+            const ring2 = document.getElementById('introRing2');
+            const orbitRing = document.getElementById('introOrbitRing');
+            const logoContainer = document.getElementById('introLogoContainer');
+            const subBadge = document.getElementById('introSubBadge');
+            const mainTitle = document.getElementById('introMainTitle');
+            const venueText = document.getElementById('introVenueText');
+
+            // Reset keyframe classes to re-trigger animations cleanly
+            ring1.classList.remove('anim-ring-1');
+            ring2.classList.remove('anim-ring-2');
+            logoContainer.classList.remove('anim-emblem');
+            subBadge.classList.remove('anim-text-up');
+            void overlay.offsetWidth; // Force reflow
+
+            if (compKey === 'ucl') {
+                radialGlow.className = 'absolute w-[520px] h-[520px] rounded-full blur-3xl opacity-50 pointer-events-none bg-gradient-to-tr from-blue-600 via-cyan-400 to-indigo-700';
+                ring1.className = 'absolute inset-0 rounded-full border-2 border-cyan-400/70 pointer-events-none anim-ring-1';
+                ring2.className = 'absolute inset-3 rounded-full border border-blue-400/60 pointer-events-none anim-ring-2';
+                orbitRing.className = 'absolute -inset-3 rounded-full border border-dashed border-cyan-300/60 opacity-60 anim-orbit pointer-events-none';
+                logoContainer.className = 'relative w-36 h-36 sm:w-44 sm:h-44 rounded-3xl flex items-center justify-center shadow-2xl bg-gradient-to-br from-blue-600 via-indigo-800 to-slate-950 border-2 border-cyan-300/70 shadow-cyan-500/40 anim-emblem';
+                subBadge.className = 'mt-6 text-[11px] sm:text-xs font-black uppercase px-3.5 py-1 rounded-full border bg-cyan-500/20 text-cyan-200 border-cyan-400/50 anim-text-up';
+                subBadge.textContent = '★ THE CHAMPIONS • SAISON 2026/27 ★';
+                mainTitle.textContent = 'UEFA CHAMPIONS LEAGUE';
+                venueText.textContent = '36 Vereine • 8 Spieltage • Finale im Estadio Metropolitano, Madrid';
+            } else {
+                radialGlow.className = 'absolute w-[520px] h-[520px] rounded-full blur-3xl opacity-50 pointer-events-none bg-gradient-to-tr from-orange-600 via-amber-400 to-red-700';
+                ring1.className = 'absolute inset-0 rounded-full border-2 border-amber-400/70 pointer-events-none anim-ring-1';
+                ring2.className = 'absolute inset-3 rounded-full border border-orange-400/60 pointer-events-none anim-ring-2';
+                orbitRing.className = 'absolute -inset-3 rounded-full border border-dashed border-amber-300/60 opacity-60 anim-orbit pointer-events-none';
+                logoContainer.className = 'relative w-36 h-36 sm:w-44 sm:h-44 rounded-3xl flex items-center justify-center shadow-2xl bg-gradient-to-br from-amber-500 via-orange-700 to-stone-950 border-2 border-amber-300/70 shadow-orange-500/40 anim-emblem';
+                subBadge.className = 'mt-6 text-[11px] sm:text-xs font-black uppercase px-3.5 py-1 rounded-full border bg-orange-500/20 text-amber-200 border-amber-400/50 anim-text-up';
+                subBadge.textContent = '🏆 ENERGY WAVE • SAISON 2026/27 🏆';
+                mainTitle.textContent = 'UEFA EUROPA LEAGUE';
+                venueText.textContent = '36 Vereine • 8 Spieltage • Finale im Stadion Frankfurt';
+            }
+
+            logoContainer.innerHTML = getIntroLogoSVG(compKey);
+
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            requestAnimationFrame(() => {
+                overlay.classList.remove('opacity-0');
+                overlay.classList.add('opacity-100');
+            });
+
+            introAnimTimeout = setTimeout(() => {
+                skipCompetitionIntro();
+            }, 1450);
+        }
+
+        function skipCompetitionIntro() {
+            const overlay = document.getElementById('competitionIntroOverlay');
+            if (!overlay || overlay.classList.contains('hidden')) return;
+            if (introAnimTimeout) clearTimeout(introAnimTimeout);
+
+            overlay.classList.remove('opacity-100');
+            overlay.classList.add('opacity-0');
+            introHideTimeout = setTimeout(() => {
+                overlay.classList.remove('flex');
+                overlay.classList.add('hidden');
+            }, 280);
+        }
+
+        function syncStateToStore() {
+            const store = competitionsState[activeComp];
+            store.teams = teams;
+            store.fixtures = fixtures;
+            store.currentMatchday = currentMatchday;
+            store.knockoutState = knockoutState;
+            store.knockoutNeedsRefresh = knockoutNeedsRefresh;
+        }
+
+        function selectCompetition(compKey, fromModal = false) {
+            if (compKey !== 'ucl' && compKey !== 'uel') return;
+            stopLiveTicker();
+            stopKoLiveTicker();
+            syncStateToStore();
+
+            activeComp = compKey;
+            const store = competitionsState[activeComp];
+            const meta = COMPETITIONS_META[activeComp];
+
+            teams = store.teams;
+            fixtures = store.fixtures;
+            currentMatchday = store.currentMatchday;
+            knockoutState = store.knockoutState;
+            knockoutNeedsRefresh = store.knockoutNeedsRefresh;
+            MATCHDAY_DATES = meta.dates;
+
+            // Update visual theme & header labels
+            document.body.classList.toggle('theme-uel', activeComp === 'uel');
+            document.getElementById('mainHeaderTitle').textContent = meta.title;
+            document.getElementById('koCompLabel').textContent = `${meta.name} 2026/27`;
+            document.getElementById('championBannerTitle').textContent = meta.winnerTitle;
+            document.getElementById('koFinalVenueTitle').textContent = meta.finalVenue;
+
+            const btnUcl = document.getElementById('switchBtnUcl');
+            const btnUel = document.getElementById('switchBtnUel');
+            const btnSim = document.getElementById('btnSimRemaining');
+            const logoBox = document.getElementById('brandLogoBox');
+            const logoIcon = document.getElementById('brandLogoIcon');
+
+            if (activeComp === 'ucl') {
+                btnUcl.className = 'px-2.5 py-0.5 rounded-lg text-[11px] font-black transition bg-cyan-500 text-slate-950';
+                btnUel.className = 'px-2.5 py-0.5 rounded-lg text-[11px] font-bold transition text-slate-300 hover:text-white';
+                btnSim.className = 'px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 shadow-lg shadow-cyan-500/20 transition flex items-center gap-1.5';
+                logoBox.className = 'w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900 p-0.5 shadow-lg shadow-blue-500/20 flex items-center justify-center shrink-0 border border-cyan-400/40';
+                logoIcon.setAttribute('class', 'w-7 h-7 text-cyan-300');
+                logoIcon.innerHTML = '<path d="M12 2L14.4 7.2L20 7.8L15.8 11.6L17 17.2L12 14.3L7 17.2L8.2 11.6L4 7.8L9.6 7.2L12 2Z"/>';
+            } else {
+                btnUel.className = 'px-2.5 py-0.5 rounded-lg text-[11px] font-black transition bg-orange-500 text-slate-950';
+                btnUcl.className = 'px-2.5 py-0.5 rounded-lg text-[11px] font-bold transition text-slate-300 hover:text-white';
+                btnSim.className = 'px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 shadow-lg shadow-orange-500/20 transition flex items-center gap-1.5';
+                logoBox.className = 'w-11 h-11 rounded-2xl bg-gradient-to-br from-orange-500 via-amber-700 to-slate-900 p-0.5 shadow-lg shadow-orange-500/20 flex items-center justify-center shrink-0 border border-orange-400/40';
+                logoIcon.setAttribute('class', 'w-7 h-7 text-amber-300');
+                logoIcon.innerHTML = '<path d="M6 3H18L16 11.5C15.3 14.2 13.7 16 12 16.8C10.3 16 8.7 14.2 8 11.5L6 3ZM10 17H14V19.5H10V17ZM7.5 19.5H16.5V21.5H7.5V19.5Z"/>';
+            }
+
+            if (fromModal) {
+                document.getElementById('competitionSelectModal').classList.add('hidden');
+            }
+
+            playCompetitionIntroAnimation(activeComp);
+
+            refreshAll();
+            updateGlobalBadgesAndViews();
+            if (!document.getElementById('view-knockout').classList.contains('hidden')) {
+                if (!knockoutState || knockoutNeedsRefresh) generateKnockoutFromTable();
+                else renderKnockoutView();
+            }
+            if (!document.getElementById('view-stats').classList.contains('hidden')) {
+                renderGlobalStatsView();
+            }
+            if (!document.getElementById('view-teams').classList.contains('hidden')) {
+                renderTeamsEditor();
+            }
+
+            showToast(`${meta.name} 2026/27 geladen!`, activeComp === 'ucl' ? '★' : '🏆');
+        }
+
+        function openCompetitionModal() {
+            stopLiveTicker();
+            stopKoLiveTicker();
+            document.getElementById('competitionSelectModal').classList.remove('hidden');
+        }
+
+        function getTeam(id) {
+            const store = competitionsState[activeComp];
+            if (!store || !store.validIds.has(id)) return null;
+            return teams.find(t => t.id === id) || null;
+        }
+
+        function updateChaosLevel(val) {
+            chaosLevel = clampInt(val, 0, 100, 35);
+            const slider = document.getElementById('chaosSlider');
+            if (slider && Number(slider.value) !== chaosLevel) slider.value = chaosLevel;
+
+            let label = 'Realistisch';
+            if (chaosLevel <= 10) label = 'Strikt nach Stärke';
+            else if (chaosLevel <= 40) label = 'Realistisch';
+            else if (chaosLevel <= 70) label = 'Pokal-Wahnsinn';
+            else if (chaosLevel <= 90) label = 'Außenseiter-Party';
+            else label = 'Totales Chaos 🎲';
+
+            const badge = document.getElementById('chaosBadge');
+            if (badge) {
+                badge.textContent = `${chaosLevel}% • ${label}`;
+            }
+            renderMatches();
+            if (knockoutState && !document.getElementById('view-knockout').classList.contains('hidden')) {
+                renderKnockoutView();
+            }
+        }
+
+        // =========================================================================
+        // 4. POISSON / xG REALISTIC + RANDOMIZER MATCH SIMULATION ENGINE
+        // =========================================================================
+        function calculateExpectedGoals(homeId, awayId, neutral = false) {
+            const home = getTeam(homeId);
+            const away = getTeam(awayId);
+            if (!home || !away) return { lambdaHome: 1.2, lambdaAway: 1.0 };
+
+            // Scale how much team ratings matter based on chaosLevel (0..100)
+            // At 0% chaos -> full rating impact (1.0). At 100% chaos -> ratings barely matter (0.05)
+            const skillWeight = Math.max(0.05, 1 - (chaosLevel / 105));
+            const homeAdvantage = neutral ? 1.0 : (1.14 - (chaosLevel / 100) * 0.12);
+
+            const baseHomeGoals = 1.48 * homeAdvantage;
+            const baseAwayGoals = 1.24;
+
+            const attDiffHome = ((home.att - away.def) / 26) * skillWeight;
+            const attDiffAway = ((away.att - home.def) / 26) * skillWeight;
+
+            let lambdaHome = baseHomeGoals * Math.exp(attDiffHome);
+            let lambdaAway = baseAwayGoals * Math.exp(attDiffAway);
+
+            // At high chaos levels, push baseline expected goals up slightly for more action
+            const chaosGoalBoost = 1 + (chaosLevel / 100) * 0.25;
+            lambdaHome = Math.max(0.25, Math.min(4.5, lambdaHome * chaosGoalBoost));
+            lambdaAway = Math.max(0.20, Math.min(4.2, lambdaAway * chaosGoalBoost));
+
+            return { lambdaHome, lambdaAway };
+        }
+
+        function samplePoisson(lambda) {
+            if (!Number.isFinite(lambda) || lambda <= 0) return 0;
+            const safeLambda = Math.min(8.0, lambda);
+            const L = Math.exp(-safeLambda);
+            let k = 0;
+            let p = 1;
+            do {
+                k++;
+                p *= Math.random();
+            } while (p > L && k < 16);
+            return Math.min(15, k - 1);
+        }
+
+        function simulateScorePair(homeId, awayId, neutral = false) {
+            let { lambdaHome, lambdaAway } = calculateExpectedGoals(homeId, awayId, neutral);
+
+            // Daily form & surprise multiplier controlled by chaosLevel
+            const chaosRatio = chaosLevel / 100;
+            const homeFormSwing = 1 + (Math.random() * 2 - 1) * (0.78 * chaosRatio);
+            const awayFormSwing = 1 + (Math.random() * 2 - 1) * (0.78 * chaosRatio);
+
+            lambdaHome = Math.max(0.15, lambdaHome * homeFormSwing);
+            lambdaAway = Math.max(0.15, lambdaAway * awayFormSwing);
+
+            // Underdog shock boost when chaosLevel is elevated
+            if (Math.random() < chaosRatio * 0.42) {
+                if (lambdaHome < lambdaAway) {
+                    lambdaHome *= 1.65;
+                    lambdaAway *= 0.65;
+                } else {
+                    lambdaAway *= 1.65;
+                    lambdaHome *= 0.65;
+                }
+            }
+
+            return {
+                hg: samplePoisson(lambdaHome),
+                ag: samplePoisson(lambdaAway)
+            };
+        }
+
+        function calculateWinProbabilities(lambdaH, lambdaA) {
+            let pHome = 0, pDraw = 0, pAway = 0;
+            const poissonP = (lam, k) => (Math.pow(lam, k) * Math.exp(-lam)) / FACTORIALS[k];
+
+            for (let h = 0; h <= 12; h++) {
+                for (let a = 0; a <= 12; a++) {
+                    const p = poissonP(lambdaH, h) * poissonP(lambdaA, a);
+                    if (h > a) pHome += p;
+                    else if (h === a) pDraw += p;
+                    else pAway += p;
+                }
+            }
+            const total = pHome + pDraw + pAway || 1;
+            const winH = Math.round((pHome / total) * 100);
+            const winA = Math.round((pAway / total) * 100);
+            const draw = Math.max(0, 100 - winH - winA);
+            return { winH, draw, winA };
+        }
+
+        // Calculates two-leg or single-match advancement probabilities & aggregate xG for Knockout Ties
+        function calculateKnockoutTieOdds(homeId, awayId, isFinal = false) {
+            if (isFinal) {
+                const { lambdaHome, lambdaAway } = calculateExpectedGoals(homeId, awayId, true);
+                const probs = calculateWinProbabilities(lambdaHome, lambdaAway);
+                const advHome = Math.min(99, Math.max(1, Math.round(probs.winH + probs.draw * 0.5)));
+                const advAway = 100 - advHome;
+                return {
+                    advHome,
+                    advAway,
+                    winH: probs.winH,
+                    draw: probs.draw,
+                    winA: probs.winA,
+                    xgHome: lambdaHome,
+                    xgAway: lambdaAway
+                };
+            } else {
+                // Leg 1 at homeId, Leg 2 at awayId
+                const leg1 = calculateExpectedGoals(homeId, awayId, false);
+                const leg2 = calculateExpectedGoals(awayId, homeId, false);
+                const totalLambdaHome = leg1.lambdaHome + leg2.lambdaAway;
+                const totalLambdaAway = leg1.lambdaAway + leg2.lambdaHome;
+                const aggProbs = calculateWinProbabilities(totalLambdaHome, totalLambdaAway);
+                const advHome = Math.min(99, Math.max(1, Math.round(aggProbs.winH + aggProbs.draw * 0.5)));
+                const advAway = 100 - advHome;
+                return {
+                    advHome,
+                    advAway,
+                    winH: aggProbs.winH,
+                    draw: aggProbs.draw,
+                    winA: aggProbs.winA,
+                    xgHome: totalLambdaHome,
+                    xgAway: totalLambdaAway
+                };
+            }
+        }
+
+        // Calculates both the realistic Pre-Season Title Odds and the Chaos-adjusted Title Odds for all 36 teams
+        function calculateAllTeamsTitleOdds() {
+            const tempReal = 4.6; // Calibration for realistic UCL bookmaker futures
+            const skillWeightChaos = Math.max(0.06, 1 - (chaosLevel / 104));
+            const tempChaos = tempReal / skillWeightChaos;
+
+            let sumReal = 0;
+            let sumChaos = 0;
+            const raw = {};
+
+            teams.forEach(t => {
+                const power = (t.att * 0.54) + (t.def * 0.46) - (t.coeff * 0.04);
+                const wReal = Math.exp((power - 85) / tempReal);
+                const wChaos = Math.exp((power - 85) / tempChaos);
+                raw[t.id] = { wReal, wChaos, power };
+                sumReal += wReal;
+                sumChaos += wChaos;
+            });
+
+            const result = {};
+            teams.forEach(t => {
+                const probReal = (raw[t.id].wReal / sumReal) * 100; // %
+                const probChaos = (raw[t.id].wChaos / sumChaos) * 100; // %
+                const oddsReal = Math.max(1.05, 100 / probReal);
+                const oddsChaos = Math.max(1.05, 100 / probChaos);
+
+                let tierLabel = 'Top-Favorit 🌟';
+                if (probReal < 0.08) tierLabel = 'Jahrhundert-Sensation 🤯 (Leicester-Level)';
+                else if (probReal < 0.35) tierLabel = 'Mega-Außenseiter 🚀 (Sensation!)';
+                else if (probReal < 1.2) tierLabel = 'Klassischer Underdog 🔥';
+                else if (probReal < 4.5) tierLabel = 'Geheimfavorit / Dark Horse 🐎';
+                else if (probReal < 9.5) tierLabel = 'Mitfavorit ⚡';
+
+                result[t.id] = {
+                    probReal,
+                    probChaos,
+                    oddsReal,
+                    oddsChaos,
+                    tierLabel
+                };
+            });
+
+            return result;
+        }
+
+        function formatOddsRatio(decimalOdds) {
+            if (decimalOdds >= 100) return `1 : ${Math.round(decimalOdds)}`;
+            if (decimalOdds >= 20) return `1 : ${Math.round(decimalOdds)}`;
+            return `1 : ${decimalOdds.toFixed(1)}`;
+        }
+
+        // =========================================================================
+        // 5. OFFICIAL UEFA CHAMPIONS LEAGUE STANDINGS & TIE-BREAKER ENGINE
+        // =========================================================================
+        function computeStandings() {
+            const statsMap = {};
+            teams.forEach(t => {
+                statsMap[t.id] = {
+                    team: t,
+                    played: 0,
+                    won: 0,
+                    drawn: 0,
+                    lost: 0,
+                    gf: 0,
+                    ga: 0,
+                    gd: 0,
+                    pts: 0,
+                    awayGoals: 0,
+                    awayWins: 0,
+                    opponents: [],
+                    oppPts: 0,
+                    oppGd: 0,
+                    oppGf: 0,
+                    form: []
+                };
+            });
+
+            fixtures.forEach(f => {
+                const home = statsMap[f.home];
+                const away = statsMap[f.away];
+                if (!home || !away) return;
+
+                home.opponents.push(f.away);
+                away.opponents.push(f.home);
+
+                if (f.hg !== null && f.ag !== null) {
+                    const hg = Number(f.hg);
+                    const ag = Number(f.ag);
+
+                    home.played++;
+                    away.played++;
+                    home.gf += hg;
+                    home.ga += ag;
+                    away.gf += ag;
+                    away.ga += hg;
+                    away.awayGoals += ag;
+
+                    if (hg > ag) {
+                        home.won++;
+                        home.pts += 3;
+                        away.lost++;
+                        home.form.push({ md: f.md, res: 'S', opp: away.team.short, score: `${hg}:${ag}` });
+                        away.form.push({ md: f.md, res: 'N', opp: home.team.short, score: `${ag}:${hg}` });
+                    } else if (hg < ag) {
+                        away.won++;
+                        away.awayWins++;
+                        away.pts += 3;
+                        home.lost++;
+                        home.form.push({ md: f.md, res: 'N', opp: away.team.short, score: `${hg}:${ag}` });
+                        away.form.push({ md: f.md, res: 'S', opp: home.team.short, score: `${ag}:${hg}` });
+                    } else {
+                        home.drawn++;
+                        away.drawn++;
+                        home.pts += 1;
+                        away.pts += 1;
+                        home.form.push({ md: f.md, res: 'U', opp: away.team.short, score: `${hg}:${ag}` });
+                        away.form.push({ md: f.md, res: 'U', opp: home.team.short, score: `${ag}:${hg}` });
+                    }
+                }
+            });
+
+            Object.values(statsMap).forEach(s => {
+                s.gd = s.gf - s.ga;
+            });
+
+            // Calculate UEFA Article 18 Tie-Breakers #6, #7, #8 (Opponents' collective performance)
+            Object.values(statsMap).forEach(s => {
+                let oppPts = 0, oppGd = 0, oppGf = 0;
+                s.opponents.forEach(oppId => {
+                    const opp = statsMap[oppId];
+                    if (opp) {
+                        oppPts += opp.pts;
+                        oppGd += opp.gd;
+                        oppGf += opp.gf;
+                    }
+                });
+                s.oppPts = oppPts;
+                s.oppGd = oppGd;
+                s.oppGf = oppGf;
+            });
+
+            // Sort according to Official UEFA League Phase Regulations
+            const sorted = Object.values(statsMap).sort((a, b) => {
+                if (b.pts !== a.pts) return b.pts - a.pts;                       // 1. Points
+                if (b.gd !== a.gd) return b.gd - a.gd;                           // 2. Goal Difference
+                if (b.gf !== a.gf) return b.gf - a.gf;                           // 3. Goals Scored
+                if (b.awayGoals !== a.awayGoals) return b.awayGoals - a.awayGoals; // 4. Away Goals Scored
+                if (b.won !== a.won) return b.won - a.won;                       // 5. Wins
+                if (b.awayWins !== a.awayWins) return b.awayWins - a.awayWins;   // 6. Away Wins
+                if (b.oppPts !== a.oppPts) return b.oppPts - a.oppPts;           // 7. Opponents' Points
+                if (b.oppGd !== a.oppGd) return b.oppGd - a.oppGd;               // 8. Opponents' GD
+                if (b.oppGf !== a.oppGf) return b.oppGf - a.oppGf;               // 9. Opponents' Goals
+                return a.team.coeff - b.team.coeff;                              // 10. Club Coefficient
+            });
+
+            sorted.forEach((item, index) => {
+                item.rank = index + 1;
+            });
+
+            return sorted;
+        }
+
+        // =========================================================================
+        // 6. UI RENDERERS (MATCHDAYS, MATCHES, STANDINGS TABLE)
+        // =========================================================================
+        function renderMatchdayTabs() {
+            const container = document.getElementById('mdTabsContainer');
+            let html = '';
+            for (let md = 1; md <= 8; md++) {
+                const mdFixtures = fixtures.filter(f => f.md === md);
+                const playedCount = mdFixtures.filter(f => f.hg !== null && f.ag !== null).length;
+                const isComplete = playedCount === mdFixtures.length;
+                const isActive = md === currentMatchday;
+
+                html += `
+                    <button onclick="selectMatchday(${md})" class="py-2 px-1 rounded-xl text-center transition border ${
+                        isActive
+                            ? 'bg-gradient-to-b from-cyan-400 to-blue-600 text-slate-950 font-black border-cyan-300 shadow-md shadow-cyan-500/20'
+                            : isComplete
+                            ? 'bg-blue-950/70 text-cyan-200 border-blue-500/30 hover:bg-blue-900/60 font-bold'
+                            : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:text-white font-semibold'
+                    }">
+                        <div class="text-[10px] uppercase tracking-tighter opacity-80">ST</div>
+                        <div class="text-sm leading-tight">${md}</div>
+                        <div class="mt-1 flex justify-center">
+                            <span class="w-1.5 h-1.5 rounded-full ${isComplete ? (isActive ? 'bg-slate-950' : 'bg-emerald-400') : playedCount > 0 ? 'bg-amber-400' : 'bg-slate-600'}"></span>
+                        </div>
+                    </button>
+                `;
+            }
+            container.innerHTML = html;
+
+            document.getElementById('currentMdTitle').textContent = `Spieltag ${currentMatchday}`;
+            document.getElementById('currentMdDate').textContent = MATCHDAY_DATES[currentMatchday];
+        }
+
+        function renderMatches() {
+            const container = document.getElementById('matchesList');
+            const mdFixtures = fixtures.filter(f => f.md === currentMatchday);
+
+            container.innerHTML = mdFixtures.map(f => {
+                const home = getTeam(f.home);
+                const away = getTeam(f.away);
+                if (!home || !away) return '';
+                const { lambdaHome, lambdaAway } = calculateExpectedGoals(f.home, f.away);
+                const probs = calculateWinProbabilities(lambdaHome, lambdaAway);
+                const isPlayed = f.hg !== null && f.ag !== null;
+
+                // Check if result is an upset (underdog won despite >= 8 rating points lower)
+                const homePower = home.att + home.def;
+                const awayPower = away.att + away.def;
+                const isUpset = isPlayed && (
+                    (f.hg > f.ag && awayPower - homePower >= 8) ||
+                    (f.ag > f.hg && homePower - awayPower >= 8)
+                );
+
+                return `
+                    <div class="p-2.5 rounded-xl bg-slate-900/85 hover:bg-slate-900 border ${isUpset ? 'border-purple-500/60 bg-purple-950/20' : isPlayed ? 'border-blue-500/30' : 'border-slate-800'} transition">
+                        <div class="flex items-center justify-between gap-2">
+                            <!-- Home Team -->
+                            <button onclick="openTeamModal('${escapeHTML(home.id)}')" class="flex-1 flex items-center justify-end gap-2 text-right group min-w-0">
+                                <span class="text-xs sm:text-sm font-bold text-slate-100 group-hover:text-cyan-300 truncate">${escapeHTML(home.short)}</span>
+                                <span class="text-base shrink-0">${escapeHTML(home.flag)}</span>
+                            </button>
+
+                            <!-- Score Inputs -->
+                            <div class="flex items-center gap-1 shrink-0">
+                                <input type="number" min="0" max="15" step="1" inputmode="numeric"
+                                    value="${f.hg !== null ? Number(f.hg) : ''}"
+                                    placeholder="-"
+                                    onchange="updateMatchScore(${Number(f.id)}, this.value, null)"
+                                    class="w-9 h-8 text-center rounded-lg font-black text-sm ${
+                                        isPlayed ? 'bg-blue-950 text-white border border-blue-400/40' : 'bg-slate-800 text-slate-300 border border-slate-700'
+                                    } focus:outline-none focus:border-cyan-400"
+                                />
+                                <span class="text-slate-500 font-bold text-xs">:</span>
+                                <input type="number" min="0" max="15" step="1" inputmode="numeric"
+                                    value="${f.ag !== null ? Number(f.ag) : ''}"
+                                    placeholder="-"
+                                    onchange="updateMatchScore(${Number(f.id)}, null, this.value)"
+                                    class="w-9 h-8 text-center rounded-lg font-black text-sm ${
+                                        isPlayed ? 'bg-blue-950 text-white border border-blue-400/40' : 'bg-slate-800 text-slate-300 border border-slate-700'
+                                    } focus:outline-none focus:border-cyan-400"
+                                />
+                            </div>
+
+                            <!-- Away Team -->
+                            <button onclick="openTeamModal('${escapeHTML(away.id)}')" class="flex-1 flex items-center justify-start gap-2 text-left group min-w-0">
+                                <span class="text-base shrink-0">${escapeHTML(away.flag)}</span>
+                                <span class="text-xs sm:text-sm font-bold text-slate-100 group-hover:text-cyan-300 truncate">${escapeHTML(away.short)}</span>
+                            </button>
+
+                            <!-- Single Match Sim Button -->
+                            <button onclick="simulateSingleMatch(${Number(f.id)})" title="Dieses Spiel simulieren" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white text-xs flex items-center justify-center shrink-0 transition">
+                                🎲
+                            </button>
+                        </div>
+
+                        <!-- xG & Win Probability Bar -->
+                        <div class="mt-1.5 flex items-center justify-between text-[10px] text-slate-400 px-1">
+                            <span>xG: <strong class="text-slate-300">${lambdaHome.toFixed(1)}</strong></span>
+                            <div class="flex items-center gap-2">
+                                ${isUpset ? '<span class="px-1.5 py-0.2 rounded bg-purple-500/30 text-purple-200 font-bold">🔥 Überraschung!</span>' : ''}
+                                <span>1: ${probs.winH}%</span>
+                                <span>X: ${probs.draw}%</span>
+                                <span>2: ${probs.winA}%</span>
+                            </div>
+                            <span>xG: <strong class="text-slate-300">${lambdaAway.toFixed(1)}</strong></span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderStandings() {
+            const standings = computeStandings();
+            const titleOddsMap = calculateAllTeamsTitleOdds();
+            const totalPlayed = fixtures.filter(f => f.hg !== null && f.ag !== null).length;
+            document.getElementById('tablePlayedBadge').textContent = `${totalPlayed} / 144 Spiele`;
+
+            const filtered = standings.filter(row => {
+                if (tableFilter === 'top8') return row.rank <= 8;
+                if (tableFilter === 'playoffs') return row.rank >= 9 && row.rank <= 24;
+                if (tableFilter === 'out') return row.rank >= 25;
+                return true;
+            });
+
+            const tbody = document.getElementById('standingsBody');
+            tbody.innerHTML = filtered.map(row => {
+                let zoneClass = '';
+                let rankBadgeClass = '';
+                if (row.rank <= 8) {
+                    zoneClass = 'border-l-4 border-l-emerald-500 bg-emerald-950/10';
+                    rankBadgeClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+                } else if (row.rank <= 16) {
+                    zoneClass = 'border-l-4 border-l-amber-400 bg-amber-950/10';
+                    rankBadgeClass = 'bg-amber-400/20 text-amber-300 border-amber-400/40';
+                } else if (row.rank <= 24) {
+                    zoneClass = 'border-l-4 border-l-orange-500 bg-orange-950/10';
+                    rankBadgeClass = 'bg-orange-500/20 text-orange-300 border-orange-500/40';
+                } else {
+                    zoneClass = 'border-l-4 border-l-rose-500/60 opacity-75';
+                    rankBadgeClass = 'bg-rose-500/15 text-rose-300 border-rose-500/30';
+                }
+
+                const gdFormatted = row.gd > 0 ? `+${row.gd}` : row.gd;
+                const tOdds = titleOddsMap[row.team.id];
+                const probText = tOdds.probReal >= 1 ? `${tOdds.probReal.toFixed(1)}%` : `${tOdds.probReal.toFixed(2)}%`;
+                const gWin = getTeamGlobalWinData(row.team.id);
+                const gWinPctStr = gWin.total > 0
+                    ? (gWin.pct >= 10 ? `${gWin.pct.toFixed(1)}%` : gWin.pct > 0 ? `${gWin.pct.toFixed(1)}%` : '0%')
+                    : '–';
+                const formBadges = row.form.slice(-5).map(item => {
+                    const color = item.res === 'S'
+                        ? 'bg-emerald-500 text-slate-950'
+                        : item.res === 'U'
+                        ? 'bg-slate-500 text-white'
+                        : 'bg-rose-500 text-white';
+                    return `<span title="ST ${Number(item.md)}: ${escapeHTML(item.score)} gg. ${escapeHTML(item.opp)}" class="w-4 h-4 rounded text-[10px] font-black inline-flex items-center justify-center ${color}">${escapeHTML(item.res)}</span>`;
+                }).join('');
+
+                // Divider lines after rank 8, 16, 24 when showing 'all'
+                const dividerBorder = (tableFilter === 'all' && (row.rank === 8 || row.rank === 16 || row.rank === 24))
+                    ? 'border-b-2 border-b-blue-400/50'
+                    : '';
+
+                return `
+                    <tr onclick="openTeamModal('${escapeHTML(row.team.id)}')" class="${zoneClass} ${dividerBorder} hover:bg-blue-900/30 cursor-pointer transition">
+                        <td class="py-2 pl-2 pr-1">
+                            <span class="w-6 h-6 rounded-md text-xs font-black inline-flex items-center justify-center border ${rankBadgeClass}">
+                                ${Number(row.rank)}
+                            </span>
+                        </td>
+                        <td class="py-2 px-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-base">${escapeHTML(row.team.flag)}</span>
+                                <span class="font-bold text-white truncate max-w-[135px] sm:max-w-none">${escapeHTML(row.team.name)}</span>
+                                <span class="text-[10px] font-semibold text-slate-400 hidden sm:inline">${escapeHTML(row.team.country)}</span>
+                            </div>
+                        </td>
+                        <td class="py-2 px-1.5 text-center font-semibold text-slate-300">${Number(row.played)}</td>
+                        <td class="py-2 px-1.5 text-center text-slate-400 hidden sm:table-cell">${Number(row.won)}</td>
+                        <td class="py-2 px-1.5 text-center text-slate-400 hidden sm:table-cell">${Number(row.drawn)}</td>
+                        <td class="py-2 px-1.5 text-center text-slate-400 hidden sm:table-cell">${Number(row.lost)}</td>
+                        <td class="py-2 px-1.5 text-center text-slate-300 font-medium">${Number(row.gf)}:${Number(row.ga)}</td>
+                        <td class="py-2 px-1.5 text-center text-slate-400 hidden md:table-cell">${Number(row.awayGoals)}</td>
+                        <td class="py-2 px-1.5 text-center font-bold ${row.gd > 0 ? 'text-emerald-400' : row.gd < 0 ? 'text-rose-400' : 'text-slate-400'}">${escapeHTML(gdFormatted)}</td>
+                        <td class="py-2 px-2 text-center font-black text-base text-cyan-300">${Number(row.pts)}</td>
+                        <td class="py-2 px-1.5 text-center hidden lg:table-cell" title="Reale Titel-Chance: ${escapeHTML(probText)} (Buchmacher-Quote: ${tOdds.oddsReal.toFixed(1)})">
+                            <div class="text-[11px] font-bold text-amber-300">${escapeHTML(formatOddsRatio(tOdds.oddsReal))}</div>
+                            <div class="text-[9px] text-slate-400">${escapeHTML(probText)}</div>
+                        </td>
+                        <td class="py-2 px-1.5 text-center hidden sm:table-cell" title="In ${Number(gWin.wins)} von ${Number(gWin.total)} globalen Simulationen Turniersieger">
+                            <div class="text-[11px] font-black ${gWin.wins > 0 ? 'text-emerald-300' : 'text-slate-500'}">${escapeHTML(gWinPctStr)}</div>
+                            <div class="text-[9px] text-slate-400">${Number(gWin.wins)}x 🏆</div>
+                        </td>
+                        <td class="py-2 px-1.5 text-center text-xs text-slate-400 hidden xl:table-cell" title="Gesamtpunkte aller 8 Gegner">${Number(row.oppPts)}</td>
+                        <td class="py-2 pl-2 pr-2 text-right hidden md:table-cell">
+                            <div class="inline-flex items-center gap-1">${formBadges || '<span class="text-slate-600 text-xs">–</span>'}</div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function refreshAll() {
+            renderMatchdayTabs();
+            renderMatches();
+            renderStandings();
+        }
+
+        // =========================================================================
+        // 7. INTERACTIVE SIMULATION & SCORE EDITING HANDLERS
+        // =========================================================================
+        function selectMatchday(md) {
+            stopLiveTicker();
+            currentMatchday = clampInt(md, 1, 8, 4);
+            refreshAll();
+        }
+
+        function changeMatchday(delta) {
+            const next = clampInt(currentMatchday + Number(delta), 1, 8, currentMatchday);
+            selectMatchday(next);
+        }
+
+        function updateMatchScore(matchId, newHg, newAg) {
+            const match = fixtures.find(f => f.id === Number(matchId));
+            if (!match) return;
+
+            if (newHg !== null) {
+                const trimmed = String(newHg).trim();
+                match.hg = trimmed === '' ? null : clampInt(trimmed, 0, 15, 0);
+                if (match.hg !== null && match.ag === null) match.ag = 0;
+            }
+            if (newAg !== null) {
+                const trimmed = String(newAg).trim();
+                match.ag = trimmed === '' ? null : clampInt(trimmed, 0, 15, 0);
+                if (match.ag !== null && match.hg === null) match.hg = 0;
+            }
+            knockoutNeedsRefresh = true;
+            refreshAll();
+        }
+
+        function simulateSingleMatch(matchId) {
+            const match = fixtures.find(f => f.id === Number(matchId));
+            if (!match) return;
+            const res = simulateScorePair(match.home, match.away);
+            match.hg = res.hg;
+            match.ag = res.ag;
+            knockoutNeedsRefresh = true;
+            refreshAll();
+        }
+
+        function simulateCurrentMatchday(onlyUnplayed = false) {
+            stopLiveTicker();
+            const mdFixtures = fixtures.filter(f => f.md === currentMatchday);
+            mdFixtures.forEach(f => {
+                if (!onlyUnplayed || f.hg === null || f.ag === null) {
+                    const res = simulateScorePair(f.home, f.away);
+                    f.hg = res.hg;
+                    f.ag = res.ag;
+                }
+            });
+            knockoutNeedsRefresh = true;
+            refreshAll();
+            showToast(`Spieltag ${currentMatchday} simuliert (Chaos: ${chaosLevel}%)!`, '🎲');
+        }
+
+        function simulateAllRemainingLeague() {
+            stopLiveTicker();
+            let count = 0;
+            fixtures.forEach(f => {
+                if (f.hg === null || f.ag === null) {
+                    const res = simulateScorePair(f.home, f.away);
+                    f.hg = res.hg;
+                    f.ag = res.ag;
+                    count++;
+                }
+            });
+            // If all were already played, re-simulate Matchdays 5-8
+            if (count === 0) {
+                fixtures.filter(f => f.md >= 5).forEach(f => {
+                    const res = simulateScorePair(f.home, f.away);
+                    f.hg = res.hg;
+                    f.ag = res.ag;
+                });
+            }
+            currentMatchday = 8;
+            refreshAll();
+            generateKnockoutFromTable();
+            showToast(`Ligaphase bis ST 8 durchsimuliert (Chaos: ${chaosLevel}%)!`, '⚡');
+        }
+
+        function clearCurrentMatchday() {
+            stopLiveTicker();
+            fixtures.filter(f => f.md === currentMatchday).forEach(f => {
+                f.hg = null;
+                f.ag = null;
+            });
+            knockoutNeedsRefresh = true;
+            refreshAll();
+            showToast(`Spieltag ${currentMatchday} zurückgesetzt.`, '🗑️');
+        }
+
+        function resetToRealStandings() {
+            stopLiveTicker();
+            fixtures.forEach(f => {
+                if (f.md <= 4) {
+                    f.hg = f.realHg;
+                    f.ag = f.realAg;
+                } else {
+                    f.hg = null;
+                    f.ag = null;
+                }
+            });
+            currentMatchday = 5;
+            knockoutNeedsRefresh = true;
+            document.getElementById('statusBadge').textContent = 'Realer Stand (Vor ST 5)';
+            refreshAll();
+            showToast('Echte Ergebnisse von Spieltag 1–4 wiederhergestellt!', '📅');
+        }
+
+        function resetAllMatches() {
+            stopLiveTicker();
+            fixtures.forEach(f => {
+                f.hg = null;
+                f.ag = null;
+            });
+            currentMatchday = 1;
+            knockoutNeedsRefresh = true;
+            document.getElementById('statusBadge').textContent = 'Komplette Neu-Simulation';
+            refreshAll();
+            showToast('Alle 8 Spieltage auf 0:0 / Offen zurückgesetzt!', '🔄');
+        }
+
+        // =========================================================================
+        // 8. ANIMATED LIVE-CONFERENCE SIMULATION (90 MINUTES)
+        // =========================================================================
+        function startLiveTickerMatchday() {
+            if (liveInterval) {
+                stopLiveTicker();
+                return;
+            }
+
+            const mdFixtures = fixtures.filter(f => f.md === currentMatchday);
+            // Prepare target final scores & random goal minutes for each match
+            const livePlan = mdFixtures.map(f => {
+                f.hg = 0;
+                f.ag = 0;
+                const finalScore = simulateScorePair(f.home, f.away);
+                const events = [];
+                for (let i = 0; i < finalScore.hg; i++) {
+                    events.push({ min: Math.floor(Math.random() * 90) + 1, side: 'home' });
+                }
+                for (let i = 0; i < finalScore.ag; i++) {
+                    events.push({ min: Math.floor(Math.random() * 90) + 1, side: 'away' });
+                }
+                return { fixture: f, events };
+            });
+
+            refreshAll();
+
+            const banner = document.getElementById('liveConferenceBanner');
+            const minDisplay = document.getElementById('liveMinuteDisplay');
+            const progBar = document.getElementById('liveProgressBar');
+            const goalTicker = document.getElementById('liveGoalTicker');
+            const btn = document.getElementById('btnLiveSim');
+
+            banner.classList.remove('hidden');
+            btn.innerHTML = '<span>⏹️</span> Konferenz stoppen';
+            goalTicker.textContent = `Anpfiff am ${currentMatchday}. Spieltag in 18 Stadien!`;
+
+            let currentMin = 1;
+            liveInterval = setInterval(() => {
+                minDisplay.textContent = `${currentMin}'`;
+                progBar.style.width = `${(currentMin / 90) * 100}%`;
+
+                let goalScoredThisMinute = false;
+                livePlan.forEach(plan => {
+                    plan.events.filter(e => e.min === currentMin).forEach(ev => {
+                        if (ev.side === 'home') plan.fixture.hg++;
+                        else plan.fixture.ag++;
+                        goalScoredThisMinute = true;
+                        const hTeam = getTeam(plan.fixture.home);
+                        const aTeam = getTeam(plan.fixture.away);
+                        if (hTeam && aTeam) {
+                            const scorer = ev.side === 'home' ? hTeam.short : aTeam.short;
+                            goalTicker.textContent = `⚽ TOR in der ${currentMin}. Minute! ${hTeam.short} ${plan.fixture.hg}:${plan.fixture.ag} ${aTeam.short} (Torschütze: ${scorer})`;
+                        }
+                    });
+                });
+
+                if (goalScoredThisMinute) {
+                    knockoutNeedsRefresh = true;
+                    refreshAll();
+                }
+
+                currentMin++;
+                if (currentMin > 90) {
+                    stopLiveTicker();
+                    showToast(`Abpfiff! Spieltag ${currentMatchday} ist beendet.`, '🏁');
+                }
+            }, 95);
+        }
+
+        function stopLiveTicker() {
+            if (liveInterval) {
+                clearInterval(liveInterval);
+                liveInterval = null;
+            }
+            const banner = document.getElementById('liveConferenceBanner');
+            const btn = document.getElementById('btnLiveSim');
+            if (banner) banner.classList.add('hidden');
+            if (btn) btn.innerHTML = "<span>⏱️</span> Live-Konferenz (90')";
+        }
+
+        // =========================================================================
+        // 9. KNOCKOUT PHASE SIMULATOR (PLAY-OFFS, R16, QF, SF, FINAL)
+        // =========================================================================
+        function generateKnockoutFromTable() {
+            stopKoLiveTicker();
+            const standings = computeStandings();
+            const r = rank => standings[rank - 1].team.id;
+
+            // Official UEFA Knockout Pairing Structure (Seeds 9-16 vs Unseeded 17-24)
+            const playoffs = [
+                { id: 'PO1', home: r(17), away: r(16), leg1H: null, leg1A: null, leg2H: null, leg2A: null, winner: null, seedTarget: r(1) },
+                { id: 'PO2', home: r(24), away: r(9),  leg1H: null, leg1A: null, leg2H: null, leg2A: null, winner: null, seedTarget: r(8) },
+                { id: 'PO3', home: r(21), away: r(12), leg1H: null, leg1A: null, leg2H: null, leg2A: null, winner: null, seedTarget: r(5) },
+                { id: 'PO4', home: r(20), away: r(13), leg1H: null, leg1A: null, leg2H: null, leg2A: null, winner: null, seedTarget: r(4) },
+                { id: 'PO5', home: r(19), away: r(14), leg1H: null, leg1A: null, leg2H: null, leg2A: null, winner: null, seedTarget: r(3) },
+                { id: 'PO6', home: r(22), away: r(11), leg1H: null, leg1A: null, leg2H: null, leg2A: null, winner: null, seedTarget: r(6) },
+                { id: 'PO7', home: r(23), away: r(10), leg1H: null, leg1A: null, leg2H: null, leg2A: null, winner: null, seedTarget: r(7) },
+                { id: 'PO8', home: r(18), away: r(15), leg1H: null, leg1A: null, leg2H: null, leg2A: null, winner: null, seedTarget: r(2) }
+            ];
+
+            knockoutState = {
+                playoffs,
+                r16: [],
+                qf: [],
+                sf: [],
+                final: null
+            };
+            knockoutNeedsRefresh = false;
+            renderKnockoutView();
+        }
+
+        function simulateTwoLegTie(tie) {
+            // Leg 1 at tie.home, Leg 2 at tie.away
+            const leg1 = simulateScorePair(tie.home, tie.away, false);
+            const leg2 = simulateScorePair(tie.away, tie.home, false);
+            tie.leg1H = leg1.hg;
+            tie.leg1A = leg1.ag;
+            tie.leg2H = leg2.ag; // goals scored by tie.home in leg 2
+            tie.leg2A = leg2.hg; // goals scored by tie.away in leg 2
+
+            const totalHome = tie.leg1H + tie.leg2H;
+            const totalAway = tie.leg1A + tie.leg2A;
+
+            if (totalHome > totalAway) {
+                tie.winner = tie.home;
+                tie.note = `${totalHome}:${totalAway} gesamt`;
+            } else if (totalAway > totalHome) {
+                tie.winner = tie.away;
+                tie.note = `${totalHome}:${totalAway} gesamt`;
+            } else {
+                // Penalty shootout simulation
+                tie.winner = Math.random() < 0.5 ? tie.home : tie.away;
+                const wName = getTeam(tie.winner)?.short || tie.winner;
+                tie.note = `${totalHome}:${totalAway} (${wName} n.E.)`;
+            }
+        }
+
+        function simulateKnockoutStage(stage) {
+            stopKoLiveTicker();
+            if (!knockoutState) generateKnockoutFromTable();
+
+            if (stage === 'playoffs') {
+                knockoutState.playoffs.forEach(tie => simulateTwoLegTie(tie));
+                knockoutState.r16 = knockoutState.playoffs.map((po, i) => ({
+                    id: `R16_${i + 1}`,
+                    home: po.winner,
+                    away: po.seedTarget,
+                    leg1H: null, leg1A: null, leg2H: null, leg2A: null, winner: null
+                }));
+                knockoutState.qf = [];
+                knockoutState.sf = [];
+                knockoutState.final = null;
+            } else if (stage === 'r16') {
+                if (knockoutState.r16.length === 0) simulateKnockoutStage('playoffs');
+                knockoutState.r16.forEach(tie => simulateTwoLegTie(tie));
+                knockoutState.qf = [
+                    { id: 'QF1', home: knockoutState.r16[0].winner, away: knockoutState.r16[1].winner, leg1H: null, winner: null },
+                    { id: 'QF2', home: knockoutState.r16[2].winner, away: knockoutState.r16[3].winner, leg1H: null, winner: null },
+                    { id: 'QF3', home: knockoutState.r16[4].winner, away: knockoutState.r16[5].winner, leg1H: null, winner: null },
+                    { id: 'QF4', home: knockoutState.r16[6].winner, away: knockoutState.r16[7].winner, leg1H: null, winner: null }
+                ];
+                knockoutState.sf = [];
+                knockoutState.final = null;
+            } else if (stage === 'qf') {
+                if (knockoutState.qf.length === 0) simulateKnockoutStage('r16');
+                knockoutState.qf.forEach(tie => simulateTwoLegTie(tie));
+                knockoutState.sf = [
+                    { id: 'SF1', home: knockoutState.qf[0].winner, away: knockoutState.qf[1].winner, leg1H: null, winner: null },
+                    { id: 'SF2', home: knockoutState.qf[2].winner, away: knockoutState.qf[3].winner, leg1H: null, winner: null }
+                ];
+                knockoutState.final = null;
+            } else if (stage === 'sf') {
+                if (knockoutState.sf.length === 0) simulateKnockoutStage('qf');
+                knockoutState.sf.forEach(tie => simulateTwoLegTie(tie));
+                knockoutState.final = {
+                    home: knockoutState.sf[0].winner,
+                    away: knockoutState.sf[1].winner,
+                    hg: null,
+                    ag: null,
+                    winner: null,
+                    note: ''
+                };
+            } else if (stage === 'final') {
+                if (!knockoutState.final) simulateKnockoutStage('sf');
+                const f = knockoutState.final;
+                const res = simulateScorePair(f.home, f.away, true);
+                f.hg = res.hg;
+                f.ag = res.ag;
+                if (f.hg > f.ag) {
+                    f.winner = f.home;
+                    f.note = 'Nach 90 Minuten';
+                } else if (f.ag > f.hg) {
+                    f.winner = f.away;
+                    f.note = 'Nach 90 Minuten';
+                } else {
+                    f.winner = Math.random() < 0.5 ? f.home : f.away;
+                    const wName = getTeam(f.winner)?.short || f.winner;
+                    f.note = `Sieg für ${wName} im Elfmeterschießen`;
+                }
+                if (typeof window.recordGlobalChampionWin === 'function') {
+                    window.recordGlobalChampionWin(activeComp, f.winner);
+                }
+            }
+
+            renderKnockoutView();
+        }
+
+        function simulateEntireKnockout() {
+            generateKnockoutFromTable();
+            simulateKnockoutStage('playoffs');
+            simulateKnockoutStage('r16');
+            simulateKnockoutStage('qf');
+            simulateKnockoutStage('sf');
+            simulateKnockoutStage('final');
+            showToast('Komplette K.O.-Phase bis zum Finale durchsimuliert!', '🏆');
+        }
+
+        function stopKoLiveTicker() {
+            if (koLiveInterval) {
+                clearInterval(koLiveInterval);
+                koLiveInterval = null;
+            }
+            const banner = document.getElementById('koLiveConferenceBanner');
+            if (banner) banner.classList.add('hidden');
+        }
+
+        function startKnockoutLiveTicker(stage) {
+            if (koLiveInterval) {
+                stopKoLiveTicker();
+                return;
+            }
+            if (!knockoutState) generateKnockoutFromTable();
+
+            // Ensure prerequisite stages exist before running this stage live
+            if (stage === 'r16' && knockoutState.r16.length === 0) simulateKnockoutStage('playoffs');
+            if (stage === 'qf' && knockoutState.qf.length === 0) simulateKnockoutStage('r16');
+            if (stage === 'sf' && knockoutState.sf.length === 0) simulateKnockoutStage('qf');
+            if (stage === 'final' && !knockoutState.final) simulateKnockoutStage('sf');
+
+            const stageNames = {
+                playoffs: 'Play-offs (Hin- & Rückspiel)',
+                r16: 'Achtelfinale (Hin- & Rückspiel)',
+                qf: 'Viertelfinale (Hin- & Rückspiel)',
+                sf: 'Halbfinale (Hin- & Rückspiel)',
+                final: 'FINALE (90 Minuten Live)'
+            };
+
+            const banner = document.getElementById('koLiveConferenceBanner');
+            const stageTitle = document.getElementById('koLiveStageTitle');
+            const legBadge = document.getElementById('koLiveLegBadge');
+            const minDisplay = document.getElementById('koLiveMinuteDisplay');
+            const progBar = document.getElementById('koLiveProgressBar');
+            const goalTicker = document.getElementById('koLiveGoalTicker');
+
+            banner.classList.remove('hidden');
+            stageTitle.textContent = `LIVE: ${stageNames[stage] || 'K.O.-Runde'}`;
+
+            if (stage === 'final') {
+                const f = knockoutState.final;
+                f.hg = 0;
+                f.ag = 0;
+                f.winner = null;
+                f.note = 'LIVE LÄUFT...';
+
+                const target = simulateScorePair(f.home, f.away, true);
+                const events = [];
+                for (let i = 0; i < target.hg; i++) events.push({ min: Math.floor(Math.random() * 90) + 1, side: 'home' });
+                for (let i = 0; i < target.ag; i++) events.push({ min: Math.floor(Math.random() * 90) + 1, side: 'away' });
+
+                legBadge.textContent = 'Endspiel';
+                goalTicker.textContent = 'Anpfiff im großen Finale!';
+                renderKnockoutView();
+
+                let min = 1;
+                koLiveInterval = setInterval(() => {
+                    minDisplay.textContent = `${min}'`;
+                    progBar.style.width = `${(min / 90) * 100}%`;
+
+                    let scored = false;
+                    events.filter(e => e.min === min).forEach(ev => {
+                        if (ev.side === 'home') f.hg++;
+                        else f.ag++;
+                        scored = true;
+                        const hTeam = getTeam(f.home);
+                        const aTeam = getTeam(f.away);
+                        const scorer = ev.side === 'home' ? hTeam.short : aTeam.short;
+                        goalTicker.textContent = `⚽ FINAL-TOR in der ${min}. Minute! ${hTeam.short} ${f.hg}:${f.ag} ${aTeam.short} (${scorer})`;
+                    });
+
+                    if (scored) renderKnockoutView();
+
+                    min++;
+                    if (min > 90) {
+                        stopKoLiveTicker();
+                        if (f.hg > f.ag) {
+                            f.winner = f.home;
+                            f.note = 'Nach 90 Minuten';
+                        } else if (f.ag > f.hg) {
+                            f.winner = f.away;
+                            f.note = 'Nach 90 Minuten';
+                        } else {
+                            f.winner = Math.random() < 0.5 ? f.home : f.away;
+                            const wName = getTeam(f.winner)?.short || f.winner;
+                            f.note = `Sieg für ${wName} im Elfmeterschießen`;
+                        }
+                        if (typeof window.recordGlobalChampionWin === 'function') {
+                            window.recordGlobalChampionWin(activeComp, f.winner);
+                        }
+                        renderKnockoutView();
+                        showToast('Abpfiff im Finale! Der Champion steht fest!', '🏆');
+                    }
+                }, 85);
+                return;
+            }
+
+            // Two-legged Knockout Stage Live Ticker (90' Leg 1 + 90' Leg 2)
+            const ties = knockoutState[stage];
+            if (!ties || !ties.length) return;
+
+            // Reset downstream rounds
+            if (stage === 'playoffs') { knockoutState.r16 = []; knockoutState.qf = []; knockoutState.sf = []; knockoutState.final = null; }
+            if (stage === 'r16') { knockoutState.qf = []; knockoutState.sf = []; knockoutState.final = null; }
+            if (stage === 'qf') { knockoutState.sf = []; knockoutState.final = null; }
+            if (stage === 'sf') { knockoutState.final = null; }
+
+            const livePlans = ties.map(tie => {
+                tie.leg1H = 0;
+                tie.leg1A = 0;
+                tie.leg2H = 0;
+                tie.leg2A = 0;
+                tie.winner = null;
+                tie.note = 'LIVE';
+
+                const targetLeg1 = simulateScorePair(tie.home, tie.away, false);
+                const targetLeg2 = simulateScorePair(tie.away, tie.home, false);
+                const events1 = [];
+                const events2 = [];
+
+                for (let i = 0; i < targetLeg1.hg; i++) events1.push({ min: Math.floor(Math.random() * 90) + 1, side: 'home' });
+                for (let i = 0; i < targetLeg1.ag; i++) events1.push({ min: Math.floor(Math.random() * 90) + 1, side: 'away' });
+                for (let i = 0; i < targetLeg2.ag; i++) events2.push({ min: Math.floor(Math.random() * 90) + 1, side: 'home' }); // tie.home goals in leg 2
+                for (let i = 0; i < targetLeg2.hg; i++) events2.push({ min: Math.floor(Math.random() * 90) + 1, side: 'away' }); // tie.away goals in leg 2
+
+                return { tie, events1, events2 };
+            });
+
+            renderKnockoutView();
+            goalTicker.textContent = `Anpfiff zu den Hinspielen (${stageNames[stage]})!`;
+
+            let step = 1; // 1..90 = Leg 1, 91..180 = Leg 2
+            koLiveInterval = setInterval(() => {
+                const isLeg1 = step <= 90;
+                const currentMin = isLeg1 ? step : step - 90;
+                legBadge.textContent = isLeg1 ? 'Hinspiel' : 'Rückspiel';
+                minDisplay.textContent = `${currentMin}'`;
+                progBar.style.width = `${(step / 180) * 100}%`;
+
+                if (step === 91) {
+                    goalTicker.textContent = '🔄 Anpfiff zu den entscheidenden Rückspielen!';
+                }
+
+                let goalScored = false;
+                livePlans.forEach(plan => {
+                    const evList = isLeg1 ? plan.events1 : plan.events2;
+                    evList.filter(e => e.min === currentMin).forEach(ev => {
+                        if (isLeg1) {
+                            if (ev.side === 'home') plan.tie.leg1H++;
+                            else plan.tie.leg1A++;
+                        } else {
+                            if (ev.side === 'home') plan.tie.leg2H++;
+                            else plan.tie.leg2A++;
+                        }
+                        goalScored = true;
+                        const hTeam = getTeam(plan.tie.home);
+                        const aTeam = getTeam(plan.tie.away);
+                        const totH = plan.tie.leg1H + plan.tie.leg2H;
+                        const totA = plan.tie.leg1A + plan.tie.leg2A;
+                        const scorer = ev.side === 'home' ? hTeam.short : aTeam.short;
+                        goalTicker.textContent = `⚽ TOR (${isLeg1 ? 'Hinspiel' : 'Rückspiel'} ${currentMin}'): ${hTeam.short} - ${aTeam.short} (Gesamt: ${totH}:${totA}, Torschütze: ${scorer})`;
+                    });
+                });
+
+                if (goalScored) renderKnockoutView();
+
+                step++;
+                if (step > 180) {
+                    stopKoLiveTicker();
+                    // Finalize winners & advance bracket
+                    livePlans.forEach(plan => {
+                        const tie = plan.tie;
+                        const totalHome = tie.leg1H + tie.leg2H;
+                        const totalAway = tie.leg1A + tie.leg2A;
+                        if (totalHome > totalAway) {
+                            tie.winner = tie.home;
+                            tie.note = `${totalHome}:${totalAway} gesamt`;
+                        } else if (totalAway > totalHome) {
+                            tie.winner = tie.away;
+                            tie.note = `${totalHome}:${totalAway} gesamt`;
+                        } else {
+                            tie.winner = Math.random() < 0.5 ? tie.home : tie.away;
+                            const wName = getTeam(tie.winner)?.short || tie.winner;
+                            tie.note = `${totalHome}:${totalAway} (${wName} n.E.)`;
+                        }
+                    });
+
+                    // Populate next stage pairings
+                    if (stage === 'playoffs') {
+                        knockoutState.r16 = knockoutState.playoffs.map((po, i) => ({
+                            id: `R16_${i + 1}`,
+                            home: po.winner,
+                            away: po.seedTarget,
+                            leg1H: null, leg1A: null, leg2H: null, leg2A: null, winner: null
+                        }));
+                    } else if (stage === 'r16') {
+                        knockoutState.qf = [
+                            { id: 'QF1', home: knockoutState.r16[0].winner, away: knockoutState.r16[1].winner, leg1H: null, winner: null },
+                            { id: 'QF2', home: knockoutState.r16[2].winner, away: knockoutState.r16[3].winner, leg1H: null, winner: null },
+                            { id: 'QF3', home: knockoutState.r16[4].winner, away: knockoutState.r16[5].winner, leg1H: null, winner: null },
+                            { id: 'QF4', home: knockoutState.r16[6].winner, away: knockoutState.r16[7].winner, leg1H: null, winner: null }
+                        ];
+                    } else if (stage === 'qf') {
+                        knockoutState.sf = [
+                            { id: 'SF1', home: knockoutState.qf[0].winner, away: knockoutState.qf[1].winner, leg1H: null, winner: null },
+                            { id: 'SF2', home: knockoutState.qf[2].winner, away: knockoutState.qf[3].winner, leg1H: null, winner: null }
+                        ];
+                    } else if (stage === 'sf') {
+                        knockoutState.final = {
+                            home: knockoutState.sf[0].winner,
+                            away: knockoutState.sf[1].winner,
+                            hg: null,
+                            ag: null,
+                            winner: null,
+                            note: ''
+                        };
+                    }
+
+                    renderKnockoutView();
+                    showToast(`Live-Konferenz (${stageNames[stage]}) beendet!`, '🏁');
+                }
+            }, 65);
+        }
+
+        function renderTieCard(tie) {
+            const h = getTeam(tie.home);
+            const a = getTeam(tie.away);
+            if (!h || !a) return '';
+            const hasScores = tie.leg1H !== null && tie.leg1A !== null;
+            const played = tie.winner !== null;
+            const isLive = hasScores && !played;
+            const odds = calculateKnockoutTieOdds(h.id, a.id, false);
+
+            // Detect upset if lower-rated team (<40% win probability) won the tie
+            const isUpset = played && (
+                (tie.winner === h.id && odds.advHome <= 38) ||
+                (tie.winner === a.id && odds.advAway <= 38)
+            );
+
+            return `
+                <div class="p-3 rounded-xl bg-slate-900/90 border ${isLive ? 'border-emerald-400/60 bg-emerald-950/15' : isUpset ? 'border-purple-500/60 bg-purple-950/15' : played ? 'border-cyan-500/30' : 'border-slate-800'} flex flex-col gap-1.5 transition">
+                    <div class="flex items-center justify-between text-xs sm:text-sm">
+                        <div class="flex items-center gap-2 min-w-0 ${tie.winner === h.id ? 'font-black text-emerald-300' : 'font-semibold text-slate-200'}">
+                            <span>${escapeHTML(h.flag)}</span>
+                            <span class="truncate">${escapeHTML(h.name)}</span>
+                            <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shrink-0" title="Wahrscheinlichkeit aufs Weiterkommen">${odds.advHome}%</span>
+                            ${tie.winner === h.id ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 shrink-0">Weiter</span>' : ''}
+                        </div>
+                        <div class="font-mono text-xs text-slate-300 shrink-0 ml-2">
+                            ${hasScores ? `<span>H: ${Number(tie.leg1H)}:${Number(tie.leg1A)} | R: ${Number(tie.leg2H)}:${Number(tie.leg2A)}</span>` : '<span class="text-slate-500">– : –</span>'}
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between text-xs sm:text-sm">
+                        <div class="flex items-center gap-2 min-w-0 ${tie.winner === a.id ? 'font-black text-emerald-300' : 'font-semibold text-slate-200'}">
+                            <span>${escapeHTML(a.flag)}</span>
+                            <span class="truncate">${escapeHTML(a.name)}</span>
+                            <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 shrink-0" title="Wahrscheinlichkeit aufs Weiterkommen">${odds.advAway}%</span>
+                            ${tie.winner === a.id ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 shrink-0">Weiter</span>' : ''}
+                        </div>
+                        <div class="text-[11px] font-bold ${isLive ? 'text-emerald-300' : 'text-cyan-300'} shrink-0 ml-2">
+                            ${hasScores ? escapeHTML(tie.note || `${Number(tie.leg1H + tie.leg2H)}:${Number(tie.leg1A + tie.leg2A)}`) : ''}
+                        </div>
+                    </div>
+
+                    <!-- Win Probability & Expected Goals (2 Legs) Bar -->
+                    <div class="mt-1 pt-1.5 border-t border-slate-800/80">
+                        <div class="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+                            <span>Gesamt-xG: <strong class="text-slate-300">${odds.xgHome.toFixed(1)}</strong></span>
+                            <span class="font-semibold text-slate-300">
+                                ${isUpset ? '<span class="text-purple-300 font-bold mr-1">🔥 Überraschung!</span>' : ''}
+                                Weiterkommen: <strong class="text-cyan-300">${odds.advHome}%</strong> vs. <strong class="text-amber-300">${odds.advAway}%</strong>
+                            </span>
+                            <span>Gesamt-xG: <strong class="text-slate-300">${odds.xgAway.toFixed(1)}</strong></span>
+                        </div>
+                        <div class="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden flex">
+                            <div class="h-full bg-cyan-400 transition-all duration-300" style="width: ${odds.advHome}%"></div>
+                            <div class="h-full bg-amber-400 transition-all duration-300" style="width: ${odds.advAway}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderKnockoutView() {
+            if (!knockoutState) generateKnockoutFromTable();
+
+            document.getElementById('ko-playoffs').innerHTML = knockoutState.playoffs.map(renderTieCard).join('');
+            document.getElementById('ko-r16').innerHTML = knockoutState.r16.length
+                ? knockoutState.r16.map(renderTieCard).join('')
+                : '<p class="text-xs text-slate-500 italic py-4 text-center">Simuliere zuerst die Play-offs, um das Achtelfinale freizuschalten.</p>';
+
+            document.getElementById('ko-qf').innerHTML = knockoutState.qf.length
+                ? knockoutState.qf.map(renderTieCard).join('')
+                : '<p class="text-xs text-slate-500 italic py-4 text-center">Simuliere zuerst das Achtelfinale.</p>';
+
+            document.getElementById('ko-sf').innerHTML = knockoutState.sf.length
+                ? knockoutState.sf.map(renderTieCard).join('')
+                : '<p class="text-xs text-slate-500 italic py-4 text-center">Simuliere zuerst das Viertelfinale.</p>';
+
+            const finalEl = document.getElementById('ko-final');
+            const banner = document.getElementById('championBanner');
+
+            if (knockoutState.final) {
+                const f = knockoutState.final;
+                const h = getTeam(f.home);
+                const a = getTeam(f.away);
+                const hasScores = f.hg !== null && f.ag !== null;
+                const played = f.winner !== null;
+                const fOdds = calculateKnockoutTieOdds(h.id, a.id, true);
+                finalEl.innerHTML = `
+                    <div class="p-4 rounded-xl bg-gradient-to-r from-slate-900 via-blue-950/80 to-slate-900 border border-amber-400/40 text-center">
+                        <div class="flex items-center justify-around gap-3">
+                            <div class="flex-1">
+                                <div class="text-2xl mb-1">${escapeHTML(h.flag)}</div>
+                                <div class="font-black text-sm sm:text-base ${f.winner === h.id ? 'text-amber-300' : 'text-white'}">${escapeHTML(h.name)}</div>
+                                <div class="mt-1 inline-block text-[11px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">Triumph: ${fOdds.advHome}%</div>
+                            </div>
+                            <div class="px-4 py-2 rounded-xl bg-slate-950 border border-slate-700 font-black text-lg sm:text-2xl text-cyan-300">
+                                ${hasScores ? `${Number(f.hg)} : ${Number(f.ag)}` : 'VS'}
+                            </div>
+                            <div class="flex-1">
+                                <div class="text-2xl mb-1">${escapeHTML(a.flag)}</div>
+                                <div class="font-black text-sm sm:text-base ${f.winner === a.id ? 'text-amber-300' : 'text-white'}">${escapeHTML(a.name)}</div>
+                                <div class="mt-1 inline-block text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30">Triumph: ${fOdds.advAway}%</div>
+                            </div>
+                        </div>
+
+                        <!-- Final Match Odds & xG Breakdown -->
+                        <div class="mt-3 pt-2.5 border-t border-slate-800/80 text-[11px] text-slate-300">
+                            <div class="flex items-center justify-between mb-1">
+                                <span>xG (90'): <strong>${fOdds.xgHome.toFixed(2)}</strong></span>
+                                <span>90' Quoten: <strong>1: ${fOdds.winH}%</strong> • <strong>X: ${fOdds.draw}%</strong> • <strong>2: ${fOdds.winA}%</strong></span>
+                                <span>xG (90'): <strong>${fOdds.xgAway.toFixed(2)}</strong></span>
+                            </div>
+                            <div class="w-full h-2 rounded-full bg-slate-950 overflow-hidden flex">
+                                <div class="h-full bg-cyan-400" style="width: ${fOdds.advHome}%"></div>
+                                <div class="h-full bg-amber-400" style="width: ${fOdds.advAway}%"></div>
+                            </div>
+                        </div>
+
+                        ${hasScores ? `<div class="mt-2.5 text-xs font-bold text-amber-300">${escapeHTML(f.note)}</div>` : ''}
+                    </div>
+                `;
+
+                if (played) {
+                    const champ = getTeam(f.winner);
+                    const runnerUp = getTeam(f.winner === f.home ? f.away : f.home);
+                    const allOdds = calculateAllTeamsTitleOdds();
+                    const cOdds = allOdds[champ.id];
+                    const gWin = getTeamGlobalWinData(champ.id);
+                    const gWinPctFormatted = gWin.total > 0 ? `${gWin.pct.toFixed(1)} %` : '100.0 %';
+
+                    const realProbStr = cOdds.probReal >= 1 ? `${cOdds.probReal.toFixed(1)} %` : `${cOdds.probReal.toFixed(2)} %`;
+                    const chaosProbStr = cOdds.probChaos >= 1 ? `${cOdds.probChaos.toFixed(1)} %` : `${cOdds.probChaos.toFixed(2)} %`;
+
+                    banner.classList.remove('hidden');
+                    document.getElementById('championName').textContent = `${champ.flag} ${champ.name}`;
+                    document.getElementById('championSub').textContent = `Finalsieg (${f.hg}:${f.ag}) gegen ${runnerUp.name} • ${f.note}`;
+                    document.getElementById('championOddsBox').innerHTML = `
+                        <div class="p-3 rounded-xl bg-slate-950/85 border border-emerald-400/50">
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-300">🌍 Andere Simulationen (Global)</div>
+                            <div class="text-lg font-black text-emerald-300 mt-0.5">${escapeHTML(gWinPctFormatted)} <span class="text-xs font-semibold text-slate-300">Sieger-Anteil</span></div>
+                            <div class="text-[11px] text-slate-400 mt-0.5"><strong class="text-white">${Number(gWin.wins)} von ${Number(gWin.total)}</strong> Simulationen gewonnen</div>
+                        </div>
+                        <div class="p-3 rounded-xl bg-slate-950/85 border border-amber-400/40">
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Reale Titel-Odds (Vor Saison)</div>
+                            <div class="text-lg font-black text-amber-300 mt-0.5">${escapeHTML(formatOddsRatio(cOdds.oddsReal))} <span class="text-xs font-semibold text-slate-300">(${escapeHTML(realProbStr)})</span></div>
+                            <div class="text-[11px] text-slate-400 mt-0.5">Buchmacher-Dezimalquote: <strong class="text-white">${cOdds.oddsReal.toFixed(1)}x</strong></div>
+                        </div>
+                        <div class="p-3 rounded-xl bg-slate-950/85 border border-purple-400/40">
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Odds mit Chaos-Faktor (${Number(chaosLevel)}%)</div>
+                            <div class="text-lg font-black text-purple-300 mt-0.5">${escapeHTML(formatOddsRatio(cOdds.oddsChaos))} <span class="text-xs font-semibold text-slate-300">(${escapeHTML(chaosProbStr)})</span></div>
+                            <div class="text-[11px] text-slate-400 mt-0.5">Team-Rating: <strong class="text-white">ATT ${Number(champ.att)} / DEF ${Number(champ.def)}</strong></div>
+                        </div>
+                        <div class="p-3 rounded-xl bg-slate-950/85 border border-cyan-400/40">
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sensations-Stufe</div>
+                            <div class="text-sm font-black text-cyan-300 mt-1">${escapeHTML(cOdds.tierLabel)}</div>
+                            <div class="text-[11px] text-slate-400 mt-0.5">UEFA-Koeffizient Rang: <strong class="text-white">#${Number(champ.coeff)} von 36</strong></div>
+                        </div>
+                    `;
+                } else {
+                    banner.classList.add('hidden');
+                }
+            } else {
+                finalEl.innerHTML = '<p class="text-xs text-slate-500 italic py-4 text-center">Simuliere zuerst das Halbfinale.</p>';
+                banner.classList.add('hidden');
+            }
+        }
+
+        // =========================================================================
+        // 9B. GLOBAL COMMUNITY WINNER STATS VIEW & MONTE-CARLO BATCH RUNNER
+        // =========================================================================
+        function renderGlobalStatsView() {
+            const meta = COMPETITIONS_META[activeComp];
+            const compData = window.globalWinStats[activeComp] || { total: 0, wins: {}, lastWinner: null };
+            const total = Number(compData.total) || 0;
+            const allOdds = calculateAllTeamsTitleOdds();
+
+            document.getElementById('statsCompSubtitle').textContent = `${meta.name} 2026/27`;
+            document.getElementById('statsTotalCount').textContent = String(total);
+
+            // Sort all 36 teams by global wins (descending), then by pre-season title probability
+            const rankedTeams = [...teams].map(t => {
+                const wins = Number((compData.wins && compData.wins[t.id]) || 0);
+                const pct = total > 0 ? (wins / total) * 100 : 0;
+                const expectedPct = allOdds[t.id] ? allOdds[t.id].probReal : 0;
+                return { team: t, wins, pct, expectedPct };
+            }).sort((a, b) => {
+                if (b.wins !== a.wins) return b.wins - a.wins;
+                return b.expectedPct - a.expectedPct;
+            });
+
+            const topItem = rankedTeams[0];
+            if (total > 0 && topItem && topItem.wins > 0) {
+                document.getElementById('statsTopWinner').textContent = `${topItem.team.flag} ${topItem.team.name}`;
+                document.getElementById('statsTopWinnerSub').textContent = `${topItem.wins} Siege (${topItem.pct.toFixed(1)}% aller Turniere)`;
+            } else {
+                document.getElementById('statsTopWinner').textContent = 'Noch keine Siege';
+                document.getElementById('statsTopWinnerSub').textContent = 'Simuliere ein Finale oder starte den +10 Schnelllauf';
+            }
+
+            const lastTeam = compData.lastWinner ? getTeam(compData.lastWinner) : null;
+            if (lastTeam) {
+                const lwWins = Number((compData.wins && compData.wins[lastTeam.id]) || 0);
+                const lwPct = total > 0 ? ((lwWins / total) * 100).toFixed(1) : '0.0';
+                document.getElementById('statsLastWinner').textContent = `${lastTeam.flag} ${lastTeam.name}`;
+                document.getElementById('statsLastWinnerSub').textContent = `Steht jetzt bei ${lwWins} Siegen (${lwPct}%)`;
+            } else {
+                document.getElementById('statsLastWinner').textContent = '–';
+                document.getElementById('statsLastWinnerSub').textContent = 'Noch kein Finale abgeschlossen';
+            }
+
+            const maxPct = Math.max(1, ...rankedTeams.map(r => r.pct));
+            const leaderboardEl = document.getElementById('globalStatsLeaderboard');
+
+            leaderboardEl.innerHTML = rankedTeams.map((item, idx) => {
+                const barWidth = total > 0 && item.wins > 0 ? Math.max(2, (item.pct / maxPct) * 100) : 0;
+                const diff = item.pct - item.expectedPct;
+                const diffStr = diff >= 0 ? `+${diff.toFixed(1)}%` : `${diff.toFixed(1)}%`;
+
+                return `
+                    <div onclick="openTeamModal('${escapeHTML(item.team.id)}')" class="p-3 rounded-xl bg-slate-900/85 hover:bg-slate-900 border ${item.wins > 0 ? 'border-emerald-500/30' : 'border-slate-800/80'} cursor-pointer transition">
+                        <div class="flex items-center justify-between gap-3 mb-1.5">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <span class="w-6 h-6 rounded-md text-xs font-black inline-flex items-center justify-center ${idx === 0 && item.wins > 0 ? 'bg-amber-400 text-slate-950' : item.wins > 0 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800 text-slate-400'}">${idx + 1}</span>
+                                <span class="text-lg shrink-0">${escapeHTML(item.team.flag)}</span>
+                                <span class="font-bold text-sm text-white truncate">${escapeHTML(item.team.name)}</span>
+                                <span class="text-[10px] font-semibold text-slate-400 hidden sm:inline">(${escapeHTML(item.team.country)})</span>
+                            </div>
+                            <div class="flex items-center gap-3 shrink-0 text-right">
+                                <div class="hidden md:block text-[11px] text-slate-400">
+                                    Erwartet (Theorie): <strong class="text-amber-300">${item.expectedPct.toFixed(1)}%</strong>
+                                    ${total > 0 ? `<span class="ml-1 (${diff >= 0 ? 'text-emerald-400' : 'text-rose-400'})">[${escapeHTML(diffStr)}]</span>` : ''}
+                                </div>
+                                <div class="min-w-[95px]">
+                                    <span class="text-sm sm:text-base font-black ${item.wins > 0 ? 'text-emerald-300' : 'text-slate-500'}">${item.pct.toFixed(1)} %</span>
+                                    <span class="text-xs text-slate-400 ml-1">(${Number(item.wins)}x 🏆)</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden">
+                            <div class="h-2 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-all duration-500" style="width: ${barWidth}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function runMonteCarloBatch(iterations = 10) {
+            const count = clampInt(iterations, 1, 50, 10);
+            const batchWinners = {};
+            let lastWinId = null;
+
+            for (let i = 0; i < count; i++) {
+                // Simulate remaining league matches on current state and full knockout
+                fixtures.forEach(f => {
+                    if (f.md >= 5 || f.hg === null || f.ag === null) {
+                        const res = simulateScorePair(f.home, f.away);
+                        f.hg = res.hg;
+                        f.ag = res.ag;
+                    }
+                });
+                const standings = computeStandings();
+                const r = rank => standings[rank - 1].team.id;
+
+                const poTies = [
+                    { home: r(17), away: r(16), seedTarget: r(1) },
+                    { home: r(24), away: r(9),  seedTarget: r(8) },
+                    { home: r(21), away: r(12), seedTarget: r(5) },
+                    { home: r(20), away: r(13), seedTarget: r(4) },
+                    { home: r(19), away: r(14), seedTarget: r(3) },
+                    { home: r(22), away: r(11), seedTarget: r(6) },
+                    { home: r(23), away: r(10), seedTarget: r(7) },
+                    { home: r(18), away: r(15), seedTarget: r(2) }
+                ];
+                poTies.forEach(t => simulateTwoLegTie(t));
+
+                const r16Ties = poTies.map(po => ({ home: po.winner, away: po.seedTarget }));
+                r16Ties.forEach(t => simulateTwoLegTie(t));
+
+                const qfTies = [
+                    { home: r16Ties[0].winner, away: r16Ties[1].winner },
+                    { home: r16Ties[2].winner, away: r16Ties[3].winner },
+                    { home: r16Ties[4].winner, away: r16Ties[5].winner },
+                    { home: r16Ties[6].winner, away: r16Ties[7].winner }
+                ];
+                qfTies.forEach(t => simulateTwoLegTie(t));
+
+                const sfTies = [
+                    { home: qfTies[0].winner, away: qfTies[1].winner },
+                    { home: qfTies[2].winner, away: qfTies[3].winner }
+                ];
+                sfTies.forEach(t => simulateTwoLegTie(t));
+
+                const fin = simulateScorePair(sfTies[0].winner, sfTies[1].winner, true);
+                let champId = sfTies[0].winner;
+                if (fin.ag > fin.hg) champId = sfTies[1].winner;
+                else if (fin.hg === fin.ag) champId = Math.random() < 0.5 ? sfTies[0].winner : sfTies[1].winner;
+
+                batchWinners[champId] = (batchWinners[champId] || 0) + 1;
+                lastWinId = champId;
+            }
+
+            if (typeof window.recordGlobalChampionBatch === 'function') {
+                window.recordGlobalChampionBatch(activeComp, batchWinners, count, lastWinId);
+            }
+            refreshAll();
+            renderGlobalStatsView();
+            const lastTeam = getTeam(lastWinId);
+            showToast(`+${count} Turniere simuliert! Letzter Sieger: ${lastTeam ? lastTeam.short : lastWinId}`, '🌍');
+        }
+
+        // =========================================================================
+        // 10. TEAM RATINGS EDITOR & TEAM MODAL
+        // =========================================================================
+        function renderTeamsEditor() {
+            const container = document.getElementById('teamsRatingGrid');
+            container.innerHTML = teams.map(t => `
+                <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-col gap-2">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">${escapeHTML(t.flag)}</span>
+                            <span class="font-bold text-sm text-white">${escapeHTML(t.name)}</span>
+                        </div>
+                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-blue-500/20 text-cyan-300">Koeff #${Number(t.coeff)}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mt-1">
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-400">Offensive</span>
+                                <span id="att-val-${escapeHTML(t.id)}" class="font-bold text-emerald-400">${Number(t.att)}</span>
+                            </div>
+                            <input type="range" min="65" max="99" value="${Number(t.att)}"
+                                oninput="updateTeamRating('${escapeHTML(t.id)}', 'att', this.value)"
+                                class="w-full accent-emerald-400 cursor-pointer" />
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-400">Defensive</span>
+                                <span id="def-val-${escapeHTML(t.id)}" class="font-bold text-cyan-400">${Number(t.def)}</span>
+                            </div>
+                            <input type="range" min="65" max="99" value="${Number(t.def)}"
+                                oninput="updateTeamRating('${escapeHTML(t.id)}', 'def', this.value)"
+                                class="w-full accent-cyan-400 cursor-pointer" />
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateTeamRating(teamId, field, value) {
+            if (field !== 'att' && field !== 'def') return;
+            const t = getTeam(teamId);
+            if (!t) return;
+            t[field] = clampInt(value, 65, 99, 80);
+            const labelEl = document.getElementById(`${field}-val-${t.id}`);
+            if (labelEl) labelEl.textContent = String(t[field]);
+            renderMatches();
+            renderStandings();
+        }
+
+        function resetTeamRatings() {
+            teams = JSON.parse(JSON.stringify(COMPETITIONS_META[activeComp].initialTeams));
+            competitionsState[activeComp].teams = teams;
+            renderTeamsEditor();
+            refreshAll();
+            showToast('Standard Team-Stärken wiederhergestellt!', '⚙️');
+        }
+
+        function openTeamModal(teamId) {
+            const standings = computeStandings();
+            const row = standings.find(r => r.team.id === teamId);
+            if (!row) return;
+
+            const allOdds = calculateAllTeamsTitleOdds();
+            const tOdds = allOdds[teamId];
+            const probStr = tOdds.probReal >= 1 ? `${tOdds.probReal.toFixed(1)}%` : `${tOdds.probReal.toFixed(2)}%`;
+            const gWin = getTeamGlobalWinData(teamId);
+            const gWinStr = gWin.total > 0 ? `${gWin.pct.toFixed(1)}% (${gWin.wins}/${gWin.total})` : '0 Siege';
+
+            document.getElementById('modalTeamFlag').textContent = row.team.flag;
+            document.getElementById('modalTeamName').textContent = row.team.name;
+            document.getElementById('modalTeamStats').textContent = `Platz ${row.rank} • ${row.pts} Pkt • Odds: ${formatOddsRatio(tOdds.oddsReal)} (${probStr}) • 🌍 Siege: ${gWinStr}`;
+
+            const teamFixtures = fixtures.filter(f => f.home === teamId || f.away === teamId);
+            const listEl = document.getElementById('modalMatchesList');
+
+            listEl.innerHTML = teamFixtures.map(f => {
+                const isHome = f.home === teamId;
+                const opp = getTeam(isHome ? f.away : f.home);
+                if (!opp) return '';
+                const played = f.hg !== null && f.ag !== null;
+                let badge = '<span class="text-xs text-slate-400">Offen</span>';
+
+                if (played) {
+                    const myGoals = isHome ? f.hg : f.ag;
+                    const oppGoals = isHome ? f.ag : f.hg;
+                    const color = myGoals > oppGoals
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                        : myGoals < oppGoals
+                        ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                        : 'bg-slate-700 text-slate-200 border-slate-600';
+                    badge = `<span class="px-2.5 py-0.5 rounded-lg font-black text-xs border ${color}">${Number(f.hg)} : ${Number(f.ag)}</span>`;
+                }
+
+                return `
+                    <div class="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-xs sm:text-sm">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-bold text-slate-400 w-10">ST ${Number(f.md)}</span>
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${isHome ? 'bg-blue-500/20 text-cyan-300' : 'bg-purple-500/20 text-purple-300'}">${isHome ? 'HEIM' : 'AUSW'}</span>
+                            <span>${escapeHTML(opp.flag)}</span>
+                            <span class="font-bold text-white">${escapeHTML(opp.name)}</span>
+                        </div>
+                        <div>${badge}</div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('teamModal').classList.remove('hidden');
+        }
+
+        function closeTeamModal() {
+            document.getElementById('teamModal').classList.add('hidden');
+        }
+
+        // =========================================================================
+        // 11. NAVIGATION & TOAST HELPERS
+        // =========================================================================
+        function switchMainView(view) {
+            if (!['league', 'knockout', 'stats', 'teams'].includes(view)) return;
+            stopLiveTicker();
+            stopKoLiveTicker();
+
+            ['league', 'knockout', 'stats', 'teams'].forEach(v => {
+                document.getElementById(`view-${v}`).classList.toggle('hidden', v !== view);
+                const tab = document.getElementById(`tab-${v}`);
+                if (v === view) {
+                    tab.className = 'px-4 py-2 text-xs sm:text-sm font-bold rounded-t-lg border-b-2 border-cyan-400 text-cyan-300 bg-blue-950/60 whitespace-nowrap transition flex items-center gap-1.5';
+                } else {
+                    tab.className = 'px-4 py-2 text-xs sm:text-sm font-bold rounded-t-lg border-b-2 border-transparent text-slate-300 hover:text-white whitespace-nowrap transition flex items-center gap-1.5';
+                }
+            });
+
+            if (view === 'knockout') {
+                if (!knockoutState || knockoutNeedsRefresh) {
+                    generateKnockoutFromTable();
+                } else {
+                    renderKnockoutView();
+                }
+            } else if (view === 'stats') {
+                renderGlobalStatsView();
+            } else if (view === 'teams') {
+                renderTeamsEditor();
+            }
+        }
+
+        function setTableFilter(filter) {
+            if (!['all', 'top8', 'playoffs', 'out'].includes(filter)) return;
+            tableFilter = filter;
+            ['all', 'top8', 'playoffs', 'out'].forEach(f => {
+                const btn = document.getElementById(`filter-${f}`);
+                if (f === filter) {
+                    btn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white';
+                } else {
+                    btn.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-300 hover:text-white';
+                }
+            });
+            renderStandings();
+        }
+
+        let toastTimeout = null;
+        function showToast(text, icon = '⚡') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastText').textContent = text;
+            document.getElementById('toastIcon').textContent = icon;
+            toast.classList.remove('hidden');
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Close modal on background click or Escape key
+        document.getElementById('teamModal').addEventListener('click', (e) => {
+            if (e.target.id === 'teamModal') closeTeamModal();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeTeamModal();
+        });
+
+        // Initial Boot
+        window.onload = () => {
+            refreshAll();
+            updateGlobalBadgesAndViews();
+        };
+    </script>
+
+    <!-- ========================================================================= -->
+    <!-- 12. REAL-TIME GLOBAL WINNER STATS SYNC (CLOUD FIRESTORE MODULE)           -->
+    <!-- ========================================================================= -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'ucl-uel-simulator-2627';
+
+        async function initGlobalStatsCloud() {
+            const syncBadge = document.getElementById('cloudSyncBadge');
+            try {
+                if (typeof __firebase_config === 'undefined' || !__firebase_config) {
+                    if (syncBadge) {
+                        syncBadge.textContent = '⚡ Sitzungs-Statistik aktiv (Bereit für Cloud)';
+                    }
+                    return;
+                }
+
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // RULE 3: Authenticate FIRST before any Firestore query
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    currentUser = user;
+                    if (!user) return;
+
+                    // RULE 1 & 2: Strict public path & simple collection query
+                    const statsColRef = collection(db, 'artifacts', appId, 'public', 'data', 'tournament_winners');
+                    onSnapshot(
+                        statsColRef,
+                        (snapshot) => {
+                            snapshot.forEach((docSnap) => {
+                                const id = docSnap.id;
+                                if (id === 'ucl' || id === 'uel') {
+                                    const data = docSnap.data() || {};
+                                    window.globalWinStats[id] = {
+                                        total: Number(data.total) || 0,
+                                        wins: data.wins && typeof data.wins === 'object' ? data.wins : {},
+                                        lastWinner: data.lastWinner || null
+                                    };
+                                }
+                            });
+                            if (typeof window.onGlobalStatsUpdated === 'function') {
+                                window.onGlobalStatsUpdated();
+                            }
+                        },
+                        (err) => {
+                            console.warn('Global stats listener warning:', err);
+                        }
+                    );
+                });
+            } catch (e) {
+                console.warn('Cloud stats fallback mode:', e);
+            }
+        }
+
+        async function saveCompStatsToCloud(compKey) {
+            if (!db || !currentUser) return;
+            try {
+                const compData = window.globalWinStats[compKey];
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament_winners', compKey);
+                await setDoc(docRef, {
+                    total: compData.total,
+                    wins: compData.wins,
+                    lastWinner: compData.lastWinner,
+                    updatedAt: Date.now()
+                }, { merge: true });
+            } catch (e) {
+                console.warn('Failed to persist global winner:', e);
+            }
+        }
+
+        window.recordGlobalChampionWin = async function(compKey, teamId) {
+            if ((compKey !== 'ucl' && compKey !== 'uel') || !teamId) return;
+            const compData = window.globalWinStats[compKey];
+            compData.total = (Number(compData.total) || 0) + 1;
+            if (!compData.wins) compData.wins = {};
+            compData.wins[teamId] = (Number(compData.wins[teamId]) || 0) + 1;
+            compData.lastWinner = teamId;
+
+            if (typeof window.onGlobalStatsUpdated === 'function') {
+                window.onGlobalStatsUpdated();
+            }
+            await saveCompStatsToCloud(compKey);
+        };
+
+        window.recordGlobalChampionBatch = async function(compKey, batchWinners, count, lastWinId) {
+            if ((compKey !== 'ucl' && compKey !== 'uel') || !batchWinners) return;
+            const compData = window.globalWinStats[compKey];
+            compData.total = (Number(compData.total) || 0) + Number(count);
+            if (!compData.wins) compData.wins = {};
+            Object.keys(batchWinners).forEach(tId => {
+                compData.wins[tId] = (Number(compData.wins[tId]) || 0) + Number(batchWinners[tId]);
+            });
+            if (lastWinId) compData.lastWinner = lastWinId;
+
+            if (typeof window.onGlobalStatsUpdated === 'function') {
+                window.onGlobalStatsUpdated();
+            }
+            await saveCompStatsToCloud(compKey);
+        };
+
+        initGlobalStatsCloud();
+    </script>
+</body>
+</html>
